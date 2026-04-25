@@ -7,7 +7,7 @@ import { SpecsGrid } from "./SpecsGrid";
 import { ProductionChart } from "./ProductionChart";
 
 export function Section2System() {
-  const { inputs, system } = useCalculator();
+  const { system } = useCalculator();
   const copy = theme.copy.section2;
 
   return (
@@ -19,7 +19,6 @@ export function Section2System() {
             Your <span className="text-gain">custom</span> solar system.
           </>
         }
-        intro="Sized to your home, your roof, and your usage. Every spec below is editable as we tailor the design."
       />
 
       <div className="mt-10">
@@ -31,9 +30,7 @@ export function Section2System() {
           <h3 className="text-xl md:text-2xl font-semibold text-ink tracking-tight">
             {copy.chartTitle}
           </h3>
-          <p className="mt-2 text-[14px] text-ink-muted max-w-3xl">
-            {copy.chartSubtitle}
-          </p>
+          <p className="mt-2 text-[14px] text-ink-muted max-w-3xl">{copy.chartSubtitle}</p>
         </div>
         <ProductionChart data={system.monthly} />
       </div>
@@ -41,9 +38,16 @@ export function Section2System() {
       <div className="mt-12">
         <ClosingCallout
           variant="gain"
-          headline="This system will save you approximately"
-          emphasis={`${formatMoney(inputs.annualSavings)} in your first year alone`}
-          tagline={copy.closingTagline}
+          headline={
+            <>
+              This system will save you approximately{" "}
+              <span className="font-bold text-gain tabular-nums">
+                {formatMoney(system.year1Savings)} in your first year alone
+              </span>
+              .
+            </>
+          }
+          tagline="And that number grows every year as power prices rise."
         />
       </div>
     </section>

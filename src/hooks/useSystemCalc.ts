@@ -1,5 +1,11 @@
 import { useMemo } from "react";
 import { MONTH_LABELS, MONTH_WEIGHTS } from "@/lib/constants";
+import {
+  calculateSolarProduction,
+  type Orientation,
+  type OrientationPanelCount,
+  type OrientationTilt,
+} from "@/lib/solar";
 
 export type SystemMonthRow = {
   month: string;
@@ -8,21 +14,70 @@ export type SystemMonthRow = {
 };
 
 export type SystemResult = {
-  dailyProduction: number;
+  systemSizeKw: number;
+  totalPanels: number;
+  weightedDeratePct: number;
+  dailyProductionKwh: number;
+  annualProductionKwh: number;
   monthly: SystemMonthRow[];
+  year1Savings: number;
+  selfUseDailyKwh: number;
+  excessExportDailyKwh: number;
+  solarCoveragePct: number; // self-use / daily-usage × 100
 };
 
-export function useSystemCalc(annualProduction: number, dailyUsage: number): SystemResult {
+export function useSystemCalc(args: {
+  panelsByOrientation: OrientationPanelCount;
+  tiltByOrientation: OrientationTilt;
+  panelWattage: number;
+  shadingDeratePct: number;   // 0..1
+  dailyUsageKwh: number;
+  selfUseKwh: number;
+  peakRatePerKwh: number;
+  fitRatePerKwh: number;
+}): SystemResult {
   return useMemo(() => {
-    const dailyProduction = (Number.isFinite(annualProduction) ? annualProduction : 0) / 365;
-    const usage = Number.isFinite(dailyUsage) ? dailyUsage : 0;
+    const prod = calculateSolarProduction({
+      panelsByOrientation: args.panelsByOrientation,
+      tiltByOrientation: args.tiltByOrientation,
+      panelWattage: args.panelWattage,
+      shadingDeratePct: args.shadingDeratePct,
+    });
 
     const monthly: SystemMonthRow[] = MONTH_WEIGHTS.map((w, i) => ({
       month: MONTH_LABELS[i],
-      production: +(dailyProduction * w).toFixed(1),
-      usage,
+      production: +(prod.dailyProductionKwh * w).toFixed(1),
+      usage: args.dailyUsageKwh,
     }));
 
-    return { dailyProduction, monthly };
-  }, [annualProduction, dailyUsage]);
+    const safeSelfUse = Math.max(0, args.selfUseKwh);
+    const excessExportDaily = Math.max(0, prod.dailyProductionKwh - safeSelfUse);
+
+    const gridOffsetSavings = safeSelfUse * 365 * args.peakRatePerKwh;
+    const exportEarnings = excessExportDaily * 365 * args.fitRatePerKwh;
+    const year1Savings = gridOffsetSavings + exportEarnings;
+
+    const solarCoveragePct =
+      args.dailyUsageKwh > 0 ? (safeSelfUse / args.dailyUsageKwh) * 100 : 0;
+
+    return {
+      ...prod,
+      monthly,
+      year1Savings,
+      selfUseDailyKwh: safeSelfUse,
+      excessExportDailyKwh: excessExportDaily,
+      solarCoveragePct,
+    };
+  }, [
+    args.panelsByOrientation,
+    args.tiltByOrientation,
+    args.panelWattage,
+    args.shadingDeratePct,
+    args.dailyUsageKwh,
+    args.selfUseKwh,
+    args.peakRatePerKwh,
+    args.fitRatePerKwh,
+  ]);
 }
+
+export type { Orientation };

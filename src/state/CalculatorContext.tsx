@@ -3,22 +3,31 @@ import { useRealCostCalc, type RealCostResult } from "@/hooks/useRealCostCalc";
 import { useSystemCalc, type SystemResult } from "@/hooks/useSystemCalc";
 import { usePricingCalc, type PricingInputs, type PricingResult } from "@/hooks/usePricingCalc";
 import { useCashflowCalc, type CashflowResult } from "@/hooks/useCashflowCalc";
+import {
+  ORIENTATIONS,
+  type Orientation,
+  type OrientationPanelCount,
+  type OrientationTilt,
+} from "@/lib/solar";
 
 export type CalculatorInputs = {
   // Section 1
   annualBill: number;
   taxRate: number;
 
-  // Section 2
-  systemSize: number;
-  panelCount: number;
+  // Section 2 — system
   panelWatt: number;
-  batterySize: number;
-  annualProduction: number;
-  dailyUsage: number;
-  annualSavings: number;
+  panelsByOrientation: OrientationPanelCount;
+  tiltByOrientation: OrientationTilt;
+  shadingDeratePct: number;       // 0..1 (e.g. 0.05 = 5%)
 
-  // Section 3
+  // Section 2 — usage and rates
+  dailyUsage: number;             // kWh/day
+  selfUseKwh: number;             // kWh/day of solar consumed (incl. via battery)
+  peakRate: number;               // $/kWh
+  fitRate: number;                // $/kWh
+
+  // Section 3 — pricing
   priceSystem: number;
   priceInverter: number;
   priceMetering: number;
@@ -37,16 +46,31 @@ export type CalculatorInputs = {
   interestRate: number;
 };
 
+const ZERO_PANELS: OrientationPanelCount = ORIENTATIONS.reduce((acc, o) => {
+  acc[o] = 0;
+  return acc;
+}, {} as OrientationPanelCount);
+
+const DEFAULT_TILTS: OrientationTilt = ORIENTATIONS.reduce((acc, o) => {
+  acc[o] = 30;
+  return acc;
+}, {} as OrientationTilt);
+
 const DEFAULTS: CalculatorInputs = {
   annualBill: 4917,
   taxRate: 30,
-  systemSize: 10.12,
-  panelCount: 23,
+
   panelWatt: 440,
-  batterySize: 40,
-  annualProduction: 13367,
+  // Default split mirrors the prototype: 23 panels, 11E + 12W
+  panelsByOrientation: { ...ZERO_PANELS, E: 11, W: 12 },
+  tiltByOrientation: { ...DEFAULT_TILTS },
+  shadingDeratePct: 0,
+
   dailyUsage: 55,
-  annualSavings: 6116,
+  selfUseKwh: 47,
+  peakRate: 0.37,
+  fitRate: 0.05,
+
   priceSystem: 62332,
   priceInverter: 6000,
   priceMetering: 850,
@@ -59,6 +83,7 @@ const DEFAULTS: CalculatorInputs = {
   batteryStcs: 372,
   batteryStcPrice: 39,
   discount: 7492,
+
   loanTerm: 10,
   interestRate: 6.29,
 };
@@ -66,6 +91,8 @@ const DEFAULTS: CalculatorInputs = {
 export type CalculatorContextValue = {
   inputs: CalculatorInputs;
   setInput: <K extends keyof CalculatorInputs>(key: K, value: CalculatorInputs[K]) => void;
+  setPanelsForOrientation: (o: Orientation, n: number) => void;
+  setTiltForOrientation: (o: Orientation, deg: number) => void;
   realCost: RealCostResult;
   system: SystemResult;
   pricing: PricingResult;
@@ -81,8 +108,32 @@ export function CalculatorProvider({ children }: { children: ReactNode }) {
     setInputs((prev) => ({ ...prev, [key]: value }));
   };
 
+  const setPanelsForOrientation = (o: Orientation, n: number) => {
+    setInputs((prev) => ({
+      ...prev,
+      panelsByOrientation: { ...prev.panelsByOrientation, [o]: Math.max(0, Math.floor(n || 0)) },
+    }));
+  };
+
+  const setTiltForOrientation = (o: Orientation, deg: number) => {
+    setInputs((prev) => ({
+      ...prev,
+      tiltByOrientation: { ...prev.tiltByOrientation, [o]: Math.max(0, Math.min(60, deg || 0)) },
+    }));
+  };
+
   const realCost = useRealCostCalc(inputs.annualBill, inputs.taxRate);
-  const system = useSystemCalc(inputs.annualProduction, inputs.dailyUsage);
+
+  const system = useSystemCalc({
+    panelsByOrientation: inputs.panelsByOrientation,
+    tiltByOrientation: inputs.tiltByOrientation,
+    panelWattage: inputs.panelWatt,
+    shadingDeratePct: inputs.shadingDeratePct,
+    dailyUsageKwh: inputs.dailyUsage,
+    selfUseKwh: inputs.selfUseKwh,
+    peakRatePerKwh: inputs.peakRate,
+    fitRatePerKwh: inputs.fitRate,
+  });
 
   const pricingInputs: PricingInputs = useMemo(
     () => ({
@@ -116,15 +167,26 @@ export function CalculatorProvider({ children }: { children: ReactNode }) {
   );
 
   const pricing = usePricingCalc(pricingInputs);
+
+  // Year-1 savings now derived in Section 2 from the system + rates inputs.
   const cashflow = useCashflowCalc(
     pricing.investment,
-    inputs.annualSavings,
+    system.year1Savings,
     inputs.loanTerm,
     inputs.interestRate
   );
 
   const value = useMemo<CalculatorContextValue>(
-    () => ({ inputs, setInput, realCost, system, pricing, cashflow }),
+    () => ({
+      inputs,
+      setInput,
+      setPanelsForOrientation,
+      setTiltForOrientation,
+      realCost,
+      system,
+      pricing,
+      cashflow,
+    }),
     [inputs, realCost, system, pricing, cashflow]
   );
 
