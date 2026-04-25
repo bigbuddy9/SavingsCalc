@@ -39,10 +39,11 @@ describe("Loan amortization parity", () => {
 });
 
 describe("Solar production parity with Resinc", () => {
-  // 100 panels × 440W = 44 kW, 30° tilt. Resinc's published values:
-  function dailyKwhFor(orientation: "N" | "NE" | "E" | "SE" | "S") {
+  // 100 panels × 440W = 44 kW. Validates against Resinc's published outputs.
+  function dailyKwhFor(orientation: "N" | "NE" | "E" | "SE" | "S", tiltDeg = 30) {
     const panelsBy = { N: 0, NE: 0, E: 0, SE: 0, S: 0, SW: 0, W: 0, NW: 0 } as const;
-    const tilts = { N: 30, NE: 30, E: 30, SE: 30, S: 30, SW: 30, W: 30, NW: 30 } as const;
+    const tilts = { N: 30, NE: 30, E: 30, SE: 30, S: 30, SW: 30, W: 30, NW: 30 };
+    tilts[orientation] = tiltDeg;
     const result = calculateSolarProduction({
       panelsByOrientation: { ...panelsBy, [orientation]: 100 },
       tiltByOrientation: { ...tilts },
@@ -52,18 +53,18 @@ describe("Solar production parity with Resinc", () => {
     return Math.round(result.dailyProductionKwh);
   }
 
-  it("matches Resinc N at 30° (191 kWh/day)", () => {
-    expect(dailyKwhFor("N")).toBe(191);
-  });
-  it("matches Resinc NE at 30° (184 kWh/day)", () => {
-    expect(dailyKwhFor("NE")).toBe(184);
-  });
-  it("matches Resinc E at 30° (162 kWh/day)", () => {
-    expect(dailyKwhFor("E")).toBe(162);
-  });
-  it("matches Resinc SE at 30° (137 kWh/day)", () => {
-    expect(dailyKwhFor("SE")).toBe(137);
-  });
+  // North — full curve validated across 6 datapoints
+  it("matches Resinc N at  0° (168 kWh/day)", () => expect(dailyKwhFor("N", 0)).toBe(168));
+  it("matches Resinc N at 10° (180 kWh/day)", () => expect(dailyKwhFor("N", 10)).toBe(180));
+  it("matches Resinc N at 20° (188 kWh/day)", () => expect(dailyKwhFor("N", 20)).toBe(188));
+  it("matches Resinc N at 30° (191 kWh/day)", () => expect(dailyKwhFor("N", 30)).toBe(191));
+  it("matches Resinc N at 40° (186 kWh/day)", () => expect(dailyKwhFor("N", 40)).toBe(186));
+  it("matches Resinc N at 50° (177 kWh/day)", () => expect(dailyKwhFor("N", 50)).toBe(177));
+
+  // Other orientations at 30° (single-datapoint anchors)
+  it("matches Resinc NE at 30° (184 kWh/day)", () => expect(dailyKwhFor("NE")).toBe(184));
+  it("matches Resinc E at 30° (162 kWh/day)", () => expect(dailyKwhFor("E")).toBe(162));
+  it("matches Resinc SE at 30° (137 kWh/day)", () => expect(dailyKwhFor("SE")).toBe(137));
 
   it("preserves the published 30° derates exactly", () => {
     expect(derateFor("N", 30)).toBeCloseTo(0.15, 5);
@@ -71,6 +72,12 @@ describe("Solar production parity with Resinc", () => {
     expect(derateFor("E", 30)).toBeCloseTo(0.28, 5);
     expect(derateFor("SE", 30)).toBeCloseTo(0.39, 5);
     expect(derateFor("S", 30)).toBeCloseTo(0.50, 5);
+  });
+
+  it("mirrors W to E and NW to NE and SW to SE", () => {
+    expect(derateFor("W", 30)).toBeCloseTo(derateFor("E", 30), 5);
+    expect(derateFor("NW", 30)).toBeCloseTo(derateFor("NE", 30), 5);
+    expect(derateFor("SW", 30)).toBeCloseTo(derateFor("SE", 30), 5);
   });
 
   it("south at 0° tilt is better than south at 30° tilt", () => {
