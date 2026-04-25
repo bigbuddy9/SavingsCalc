@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11", "ss01";
+  }
+
+  body {
+    @apply bg-surface text-ink font-sans antialiased;
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    @apply bg-ink text-white;
+  }
+
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+}
+
+@layer components {
+  .num {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum", "cv02";
+  }
+
+  .container-narrow {
+    @apply mx-auto w-full max-w-[1140px] px-6 md:px-10;
+  }
+
+  .editable-input {
+    @apply num bg-edit/60 hover:bg-edit border border-line rounded-md
+           px-3 py-2 text-ink font-semibold transition-colors
+           focus:outline-none focus:ring-4 focus:ring-edit-ring/40
+           focus:border-edit-ring focus:bg-edit;
+  }
+
+  .section-eyebrow {
+    @apply inline-flex items-center gap-2 text-[11px] font-semibold uppercase
+           tracking-[0.18em] text-ink-subtle;
+  }
+
+  .section-eyebrow::before {
+    content: "";
+    @apply h-px w-8 bg-line-strong;
+  }
+}
