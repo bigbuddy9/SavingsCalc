@@ -61,9 +61,22 @@ describe("Solar production parity with Resinc", () => {
   it("matches Resinc N at 40° (186 kWh/day)", () => expect(dailyKwhFor("N", 40)).toBe(186));
   it("matches Resinc N at 50° (177 kWh/day)", () => expect(dailyKwhFor("N", 50)).toBe(177));
 
-  // Other orientations at 30° (single-datapoint anchors)
+  // South — full curve validated across 5 datapoints (10°-50°), plus 0° rule
+  it("matches Resinc S at 10° (157 kWh/day)", () => expect(dailyKwhFor("S", 10)).toBe(157));
+  it("matches Resinc S at 20° (141 kWh/day)", () => expect(dailyKwhFor("S", 20)).toBe(141));
+  it("matches Resinc S at 30° (121 kWh/day)", () => expect(dailyKwhFor("S", 30)).toBe(121));
+  it("matches Resinc S at 40° ( 99 kWh/day)", () => expect(dailyKwhFor("S", 40)).toBe(99));
+  it("matches Resinc S at 50° ( 81 kWh/day)", () => expect(dailyKwhFor("S", 50)).toBe(81));
+
+  // East — full curve validated across 5 datapoints (10°-50°), plus 0° rule
+  it("matches Resinc E at 10° (171 kWh/day)", () => expect(dailyKwhFor("E", 10)).toBe(171));
+  it("matches Resinc E at 20° (166 kWh/day)", () => expect(dailyKwhFor("E", 20)).toBe(166));
+  it("matches Resinc E at 30° (162 kWh/day)", () => expect(dailyKwhFor("E", 30)).toBe(162));
+  it("matches Resinc E at 40° (153 kWh/day)", () => expect(dailyKwhFor("E", 40)).toBe(153));
+  it("matches Resinc E at 50° (144 kWh/day)", () => expect(dailyKwhFor("E", 50)).toBe(144));
+
+  // Single-datapoint orientations at 30° (anchored)
   it("matches Resinc NE at 30° (184 kWh/day)", () => expect(dailyKwhFor("NE")).toBe(184));
-  it("matches Resinc E at 30° (162 kWh/day)", () => expect(dailyKwhFor("E")).toBe(162));
   it("matches Resinc SE at 30° (137 kWh/day)", () => expect(dailyKwhFor("SE")).toBe(137));
 
   it("preserves the published 30° derates exactly", () => {
@@ -71,7 +84,13 @@ describe("Solar production parity with Resinc", () => {
     expect(derateFor("NE", 30)).toBeCloseTo(0.18, 5);
     expect(derateFor("E", 30)).toBeCloseTo(0.28, 5);
     expect(derateFor("SE", 30)).toBeCloseTo(0.39, 5);
-    expect(derateFor("S", 30)).toBeCloseTo(0.50, 5);
+    expect(derateFor("S", 30)).toBeCloseTo(0.46, 5);
+  });
+
+  it("0° tilt = 25% derate for every orientation (flat-panel rule)", () => {
+    for (const o of ["N", "NE", "E", "SE", "S", "SW", "W", "NW"] as const) {
+      expect(derateFor(o, 0)).toBeCloseTo(0.25, 5);
+    }
   });
 
   it("mirrors W to E and NW to NE and SW to SE", () => {
