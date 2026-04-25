@@ -39,4 +39,4 @@ Single source of truth: `src/config/theme.ts` (brand name + copy) and `tailwind.
 
 ## Deploy
 
-`netlify.toml` is committed. Connect the repo in Netlify and the build is automatic (`npm run build` → `dist/`).
+`vercel.json` is committed. Connect the repo in Vercel and the build is automatic (`npm run build` → `dist/`). Production branch = `main`. Every other branch gets an automatic preview URL.
