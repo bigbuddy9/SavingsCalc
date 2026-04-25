@@ -16,7 +16,7 @@
 
 export type Orientation = "N" | "NE" | "E" | "SE" | "S" | "SW" | "W" | "NW";
 
-export const ORIENTATIONS: Orientation[] = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+export const ORIENTATIONS: Orientation[] = ["N", "E", "S", "W", "NE", "SE", "SW", "NW"];
 
 export const ORIENTATION_LABEL: Record<Orientation, string> = {
   N: "North",
