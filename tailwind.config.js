@@ -32,7 +32,7 @@ export default {
         surface: {
           DEFAULT: "#FFFFFF",
           alt: "#FAFAFA",
-          sunken: "#F5F5F4",
+          sunken: "#F2F2EF",
         },
         line: {
           DEFAULT: "#E7E5E4",

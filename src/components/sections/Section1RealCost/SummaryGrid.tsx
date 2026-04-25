@@ -28,23 +28,27 @@ export function SummaryGrid({
       {rows.map((r) => (
         <div
           key={r.years}
-          className="rounded-xl border border-line bg-surface p-6 shadow-card"
+          className="rounded-2xl border border-line bg-surface p-7 shadow-card"
         >
-          <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-subtle">
-            {r.years}-year horizon
+          <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-subtle">
+            {r.years} years
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-4">
-            <div>
-              <div className="text-xs text-ink-muted">Power cost</div>
-              <div className="mt-1 text-xl font-semibold text-pain tabular-nums">
-                {formatMoney(r.power)}
-              </div>
+
+          <div className="mt-5">
+            <div className="text-3xl font-bold text-pain tabular-nums tracking-tight">
+              {formatMoney(r.power)}
             </div>
-            <div>
-              <div className="text-xs text-ink-muted">Pre-tax earnings</div>
-              <div className="mt-1 text-xl font-semibold text-pain tabular-nums">
-                {formatMoney(r.earnings)}
-              </div>
+            <div className="mt-1 text-[13px] text-ink-muted">
+              in power bills
+            </div>
+          </div>
+
+          <div className="mt-5 pt-5 border-t border-line/70">
+            <div className="text-3xl font-bold text-pain tabular-nums tracking-tight">
+              {formatMoney(r.earnings)}
+            </div>
+            <div className="mt-1 text-[13px] text-ink-muted">
+              you'd need to earn (pre-tax) to cover it
             </div>
           </div>
         </div>

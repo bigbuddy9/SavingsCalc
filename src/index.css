@@ -11,7 +11,7 @@
   }
 
   body {
-    @apply bg-surface text-ink font-sans antialiased;
+    @apply bg-surface-sunken text-ink font-sans antialiased;
     font-variant-numeric: tabular-nums;
   }
 

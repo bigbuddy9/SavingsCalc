@@ -20,11 +20,13 @@ export function Section1RealCost() {
             The <span className="text-pain">real</span> cost of your power.
           </>
         }
-        intro="Even before going solar, here's what 25 years of doing nothing actually costs you — at industry-forecast price increases."
       />
 
       <div className="mt-10 grid md:grid-cols-2 gap-5 max-w-2xl">
-        <Field label="Annual electricity bill">
+        <Field
+          label="Annual electricity bill"
+          hint="What you've spent on power in the last 12 months"
+        >
           <NumberInput
             value={inputs.annualBill}
             onChange={(n) => setInput("annualBill", n)}
@@ -33,7 +35,10 @@ export function Section1RealCost() {
             step={50}
           />
         </Field>
-        <Field label="Marginal tax rate">
+        <Field
+          label="Marginal tax rate"
+          hint="The percentage you're taxed at on your top dollar"
+        >
           <NumberInput
             value={inputs.taxRate}
             onChange={(n) => setInput("taxRate", n)}
@@ -67,14 +72,11 @@ export function Section1RealCost() {
         <ClosingCallout
           headline={
             <>
-              Over the next 25 years, you'll need to earn
-            </>
-          }
-          emphasis={`${formatMoney(realCost.closingEarnings)} before tax`}
-          tagline={
-            <>
-              <span className="font-medium text-ink-soft">— just to pay your power bill.</span>
-              <span className="block mt-1 italic">{copy.closingTagline}</span>
+              Over the next 25 years, you'll need to earn{" "}
+              <span className="font-bold text-pain tabular-nums">
+                {formatMoney(realCost.closingEarnings)} before tax
+              </span>{" "}
+              — just to pay your power bill.
             </>
           }
         />
@@ -83,10 +85,19 @@ export function Section1RealCost() {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
   return (
     <label className="block">
-      <span className="block text-[13px] font-medium text-ink-soft mb-2">{label}</span>
+      <span className="block text-[14px] font-semibold text-ink mb-1">{label}</span>
+      {hint && <span className="block text-[12.5px] text-ink-muted mb-2.5">{hint}</span>}
       {children}
     </label>
   );
