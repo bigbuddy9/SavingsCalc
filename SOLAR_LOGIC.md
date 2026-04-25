@@ -68,14 +68,25 @@ The "derate" is the percentage of theoretical output lost due to orientation × 
 | 40° | 32% |
 | 50° | 36% |
 
-### NE / SE (anchored only — awaiting full curves)
+### NE (validated — 5 datapoints + 0° rule)
 
-| Tilt | NE derate | SE derate |
-|---:|---:|---:|
-| 0°  | 25% | 25% |
-| 30° | 18% | 39% |
+| Tilt | Derate |
+|---:|---:|
+| 0°  | 25% |
+| 10° | 20% |
+| 20° | **18%** ← optimum |
+| 30° | **18%** ← optimum (flat from 20° to 30°) |
+| 40° | 20% |
+| 50° | 23% |
 
-For tilts other than 0° and 30°, NE and SE inherit the **shape** of North's tilt curve — that is, the relative additional derate from being X degrees off the orientation's optimum is taken from N's known curve. This is replaced by direct datapoints once Resinc screenshots arrive.
+### SE (anchored only — awaiting full curve)
+
+| Tilt | Derate |
+|---:|---:|
+| 0°  | 25% |
+| 30° | 39% |
+
+For tilts other than 0° and 30°, SE inherits the **shape** of North's tilt curve — that is, the relative additional derate from being X degrees off the orientation's optimum is taken from N's known curve. This is replaced by direct datapoints once Resinc screenshots arrive.
 
 ### Mirror rule
 
@@ -137,7 +148,7 @@ break_even_year  = first n where year_n_net > 0
 
 ## 8. Open questions / TODO
 
-- Get full Resinc curves for **NE** and **SE** (currently anchored at 0° and 30° only).
+- Get full Resinc curve for **SE** (currently anchored at 0° and 30° only).
 - Confirm `peak_sun_hours = 5.1` for non-Brisbane latitudes (Sydney, Melbourne, Perth may differ).
 
 ## 9. Where this lives in code
