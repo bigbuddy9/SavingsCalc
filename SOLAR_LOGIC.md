@@ -28,8 +28,9 @@ weighted_derate   = Σ (derate × panels) ÷ total_panels
 
 | Symbol | Value | Notes |
 |---|---|---|
-| `peak_sun_hours` | **5.1 h/day** | Hardcoded. Reverse-engineered from Resinc datapoints. |
+| `peak_sun_hours` | **derived from postcode** | Looked up via `lookupLocation(country, postcode)` (`src/lib/location.ts`). Default 5.1 h/day for Brisbane. |
 | `shading` | 0..1 | User input (Section 2). Default 0%. |
+| `hemisphere` | `"S"` or `"N"` | Derived from country. Drives the orientation flip described in §4. |
 
 ## 3. Derate lookup tables
 
@@ -109,6 +110,23 @@ A panel lying flat on the roof doesn't care which way the roof faces. So every o
 For tilts **between** known datapoints: linear interpolation.
 For tilts **outside** the table (e.g. 60°): linear extrapolation using the slope of the nearest segment, capped at 95% derate.
 
+### Hemisphere flip (northern-hemisphere users)
+
+Curves are calibrated for Australia, where **North** faces the sun. In the northern hemisphere (USA, etc.) **South** faces the sun. So when `hemisphere === "N"`, the orientation is flipped before lookup:
+
+| User picks | Looks up the curve for |
+|---|---|
+| N  | S |
+| S  | N |
+| NE | SE |
+| SE | NE |
+| NW | SW |
+| SW | NW |
+| E  | E (unchanged — symmetrical) |
+| W  | W (unchanged — symmetrical) |
+
+This means a Phoenix homeowner picking "South" gets the same physics as a Brisbane homeowner picking "North". One set of curves, both hemispheres.
+
 ## 5. Year-1 savings
 
 Section 2 derives the user's first-year solar savings, which then flows into Section 4's loan cashflow.
@@ -150,16 +168,20 @@ break_even_year  = first n where year_n_net > 0
 
 ## 8. Open questions / TODO
 
-- Confirm `peak_sun_hours = 5.1` for non-Brisbane latitudes (Sydney, Melbourne, Perth may differ).
+- Confirm `peak_sun_hours` table values (`src/lib/location.ts`) against Resinc / installer-published numbers for non-Brisbane Aus capitals.
+- Add dedicated W / NW / SW derate curves once the Resinc datapoints land — currently mirrored from E / NE / SE.
+- Add Canada, NZ, UK to the country dropdown when needed (lookup table + `POSTCODE_LENGTH` entry).
 
 ## 9. Where this lives in code
 
 | Concept | File |
 |---|---|
-| Derate lookups + interpolation | `src/lib/solar.ts` |
+| Derate lookups + interpolation + hemisphere flip | `src/lib/solar.ts` |
+| Postcode → city / hemisphere / sun-hours | `src/lib/location.ts` |
 | Daily/annual production hook | `src/hooks/useSystemCalc.ts` |
 | Year-1 savings | `src/hooks/useSystemCalc.ts` (within the same hook) |
 | Real-cost compounding | `src/hooks/useRealCostCalc.ts` |
 | Loan amortization + cashflow | `src/hooks/useCashflowCalc.ts` |
-| All inputs | `src/state/CalculatorContext.tsx` |
+| All inputs (incl. country + postcode) | `src/state/CalculatorContext.tsx` |
+| Country/postcode UI | `src/components/sections/Section2System/LocationPicker.tsx` |
 | Parity tests | `src/__tests__/calc.test.ts` |

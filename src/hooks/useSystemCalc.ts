@@ -6,6 +6,7 @@ import {
   type OrientationPanelCount,
   type OrientationTilt,
 } from "@/lib/solar";
+import type { Hemisphere } from "@/lib/location";
 
 export type SystemMonthRow = {
   month: string;
@@ -35,6 +36,8 @@ export function useSystemCalc(args: {
   selfUseKwh: number;
   peakRatePerKwh: number;
   fitRatePerKwh: number;
+  peakSunHours: number;
+  hemisphere: Hemisphere;
 }): SystemResult {
   return useMemo(() => {
     const prod = calculateSolarProduction({
@@ -42,6 +45,8 @@ export function useSystemCalc(args: {
       tiltByOrientation: args.tiltByOrientation,
       panelWattage: args.panelWattage,
       shadingDeratePct: args.shadingDeratePct,
+      peakSunHours: args.peakSunHours,
+      hemisphere: args.hemisphere,
     });
 
     const monthly: SystemMonthRow[] = MONTH_WEIGHTS.map((w, i) => ({
@@ -77,6 +82,8 @@ export function useSystemCalc(args: {
     args.selfUseKwh,
     args.peakRatePerKwh,
     args.fitRatePerKwh,
+    args.peakSunHours,
+    args.hemisphere,
   ]);
 }
 

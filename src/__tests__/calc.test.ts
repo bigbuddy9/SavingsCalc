@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { calculateLoanPayment } from "@/hooks/useCashflowCalc";
 import { calculateSolarProduction, derateFor } from "@/lib/solar";
+import { isValidPostcodeFormat, lookupLocation } from "@/lib/location";
 import { PRICE_INCREASE } from "@/lib/constants";
 
 // These tests pin the financial math to the prototype's published numbers,
@@ -115,6 +116,86 @@ describe("Solar production parity with Resinc", () => {
 
   it("north at 30° tilt is better than north at 0° tilt", () => {
     expect(derateFor("N", 30)).toBeLessThan(derateFor("N", 0));
+  });
+});
+
+describe("Hemisphere flip", () => {
+  // In the northern hemisphere the sun is in the southern sky, so picking
+  // "South" should produce identical numbers to picking "North" in the south.
+  it("S-facing in N hemisphere = N-facing in S hemisphere (every tilt)", () => {
+    for (const tilt of [0, 10, 20, 30, 40, 50]) {
+      expect(derateFor("S", tilt, "N")).toBeCloseTo(derateFor("N", tilt, "S"), 5);
+    }
+  });
+
+  it("SE-facing in N hemisphere = NE-facing in S hemisphere", () => {
+    for (const tilt of [0, 10, 20, 30, 40, 50]) {
+      expect(derateFor("SE", tilt, "N")).toBeCloseTo(derateFor("NE", tilt, "S"), 5);
+    }
+  });
+
+  it("E and W are unchanged across hemispheres (symmetrical about N-S axis)", () => {
+    for (const tilt of [10, 30, 50]) {
+      expect(derateFor("E", tilt, "N")).toBeCloseTo(derateFor("E", tilt, "S"), 5);
+      expect(derateFor("W", tilt, "N")).toBeCloseTo(derateFor("W", tilt, "S"), 5);
+    }
+  });
+});
+
+describe("Location lookup", () => {
+  it("resolves Brisbane (4155) to QLD with 5.1 sun-hours", () => {
+    const r = lookupLocation("AU", "4155");
+    expect(r).not.toBeNull();
+    expect(r?.city).toBe("Brisbane");
+    expect(r?.state).toBe("QLD");
+    expect(r?.hemisphere).toBe("S");
+    expect(r?.peakSunHours).toBe(5.1);
+  });
+
+  it("resolves Beverly Hills (90210) to LA with N-hemisphere", () => {
+    const r = lookupLocation("US", "90210");
+    expect(r).not.toBeNull();
+    expect(r?.city).toBe("Los Angeles");
+    expect(r?.hemisphere).toBe("N");
+    expect(r?.peakSunHours).toBeGreaterThan(5);
+  });
+
+  it("rejects wrong-format postcodes (4-digit US, 5-digit Aus)", () => {
+    expect(isValidPostcodeFormat("US", "4155")).toBe(false);
+    expect(isValidPostcodeFormat("AU", "90210")).toBe(false);
+    expect(isValidPostcodeFormat("AU", "4155")).toBe(true);
+    expect(isValidPostcodeFormat("US", "90210")).toBe(true);
+  });
+
+  it("rejects non-numeric postcodes", () => {
+    expect(isValidPostcodeFormat("AU", "abcd")).toBe(false);
+    expect(isValidPostcodeFormat("US", "9021a")).toBe(false);
+  });
+});
+
+describe("Production scales with peak sun hours", () => {
+  // Brisbane (5.1) → Phoenix (6.5) should produce ~27% more on the same array.
+  it("100×440W panels at N/30° produce more in higher-irradiance regions", () => {
+    const panelsBy = { N: 100, NE: 0, E: 0, SE: 0, S: 0, SW: 0, W: 0, NW: 0 };
+    const tilts = { N: 30, NE: 30, E: 30, SE: 30, S: 30, SW: 30, W: 30, NW: 30 };
+    const brisbane = calculateSolarProduction({
+      panelsByOrientation: panelsBy,
+      tiltByOrientation: tilts,
+      panelWattage: 440,
+      shadingDeratePct: 0,
+      peakSunHours: 5.1,
+      hemisphere: "S",
+    });
+    const phoenix = calculateSolarProduction({
+      panelsByOrientation: { ...panelsBy, N: 0, S: 100 }, // S-facing in N hemi = optimal
+      tiltByOrientation: tilts,
+      panelWattage: 440,
+      shadingDeratePct: 0,
+      peakSunHours: 6.5,
+      hemisphere: "N",
+    });
+    // Phoenix should be ~6.5/5.1 = 27% more, since both pick their optimal orientation.
+    expect(phoenix.dailyProductionKwh / brisbane.dailyProductionKwh).toBeCloseTo(6.5 / 5.1, 2);
   });
 });
 

@@ -9,11 +9,21 @@ import {
   type OrientationPanelCount,
   type OrientationTilt,
 } from "@/lib/solar";
+import {
+  DEFAULT_LOCATION,
+  lookupLocation,
+  type Country,
+  type LocationResult,
+} from "@/lib/location";
 
 export type CalculatorInputs = {
   // Section 1
   annualBill: number;
   taxRate: number;
+
+  // Location (drives hemisphere + peak sun hours)
+  country: Country;
+  postcode: string;
 
   // Section 2 — system
   panelWatt: number;
@@ -60,6 +70,9 @@ const DEFAULTS: CalculatorInputs = {
   annualBill: 4917,
   taxRate: 30,
 
+  country: DEFAULT_LOCATION.country,
+  postcode: DEFAULT_LOCATION.postcode,
+
   panelWatt: 440,
   // Default split mirrors the prototype: 23 panels, 11E + 12W
   panelsByOrientation: { ...ZERO_PANELS, E: 11, W: 12 },
@@ -93,6 +106,9 @@ export type CalculatorContextValue = {
   setInput: <K extends keyof CalculatorInputs>(key: K, value: CalculatorInputs[K]) => void;
   setPanelsForOrientation: (o: Orientation, n: number) => void;
   setTiltForOrientation: (o: Orientation, deg: number) => void;
+  setCountry: (country: Country) => void;
+  /** Resolved location (city/state/hemisphere/peak-sun) derived from country + postcode. */
+  location: LocationResult;
   realCost: RealCostResult;
   system: SystemResult;
   pricing: PricingResult;
@@ -122,6 +138,25 @@ export function CalculatorProvider({ children }: { children: ReactNode }) {
     }));
   };
 
+  /** Switching country resets the postcode so we don't keep an invalid one around. */
+  const setCountry = (country: Country) => {
+    setInputs((prev) =>
+      prev.country === country ? prev : { ...prev, country, postcode: "" }
+    );
+  };
+
+  const location = useMemo<LocationResult>(
+    () => lookupLocation(inputs.country, inputs.postcode) ?? {
+      country: inputs.country,
+      postcode: inputs.postcode,
+      city: "",
+      state: "",
+      hemisphere: inputs.country === "AU" ? "S" : "N",
+      peakSunHours: DEFAULT_LOCATION.peakSunHours,
+    },
+    [inputs.country, inputs.postcode]
+  );
+
   const realCost = useRealCostCalc(inputs.annualBill, inputs.taxRate);
 
   const system = useSystemCalc({
@@ -133,6 +168,8 @@ export function CalculatorProvider({ children }: { children: ReactNode }) {
     selfUseKwh: inputs.selfUseKwh,
     peakRatePerKwh: inputs.peakRate,
     fitRatePerKwh: inputs.fitRate,
+    peakSunHours: location.peakSunHours,
+    hemisphere: location.hemisphere,
   });
 
   const pricingInputs: PricingInputs = useMemo(
@@ -182,12 +219,14 @@ export function CalculatorProvider({ children }: { children: ReactNode }) {
       setInput,
       setPanelsForOrientation,
       setTiltForOrientation,
+      setCountry,
+      location,
       realCost,
       system,
       pricing,
       cashflow,
     }),
-    [inputs, realCost, system, pricing, cashflow]
+    [inputs, location, realCost, system, pricing, cashflow]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

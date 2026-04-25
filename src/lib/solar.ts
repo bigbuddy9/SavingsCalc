@@ -1,7 +1,12 @@
 /**
  * Solar production model — derived from Resinc's published derate values.
  *
- * Verified against Resinc at 100 panels × 440W = 44 kW (peak sun = 5.1 h):
+ * Curves are calibrated for the SOUTHERN hemisphere (where North faces the sun).
+ * For northern-hemisphere users we flip orientations on lookup (N↔S, NE↔SE, NW↔SW)
+ * so a Phoenix homeowner picking "South" gets the same physics as a Brisbane
+ * homeowner picking "North".
+ *
+ * Verified against Resinc at 100 panels × 440W = 44 kW (peak sun = 5.1 h, S-hemi):
  *
  *   Orientation × Tilt → Derate (and resulting daily kWh):
  *     N  @  0° → 25% derate → 168 kWh/day  ✓
@@ -13,10 +18,11 @@
  *     NE @ 30° → 18% derate
  *     E  @ 30° → 28% derate
  *     SE @ 30° → 39% derate
- *     S  @ 30° → ~50% derate (placeholder, awaiting confirmation)
  *
  * E/W and NE/NW and SE/SW are interchangeable (mirrored).
  */
+
+import type { Hemisphere } from "./location";
 
 export type Orientation = "N" | "NE" | "E" | "SE" | "S" | "SW" | "W" | "NW";
 
@@ -38,6 +44,17 @@ const MIRROR: Partial<Record<Orientation, Orientation>> = {
   NW: "NE",
   W: "E",
   SW: "SE",
+};
+
+/**
+ * North↔South flip used for northern-hemisphere lookups.
+ * E and W stay put (they're symmetrical about the N-S axis).
+ */
+const FLIP_NS: Record<Orientation, Orientation> = {
+  N: "S", S: "N",
+  NE: "SE", SE: "NE",
+  NW: "SW", SW: "NW",
+  E: "E", W: "W",
 };
 
 /** Tilt → derate lookup, calibrated to Resinc datapoints. */
@@ -71,7 +88,8 @@ const OPTIMAL_TILT: Record<Orientation, number> = {
   S: 0,   SW: 10, W: 15, NW: 25,
 };
 
-export const PEAK_SUN_HOURS = 5.1;
+/** Brisbane baseline — used as the default when no location is supplied. */
+export const DEFAULT_PEAK_SUN_HOURS = 5.1;
 
 /** Linear interpolation between two known tilts in a curve. */
 function interpolateCurve(curve: DerateCurve, tiltDeg: number): number {
@@ -101,15 +119,20 @@ function interpolateCurve(curve: DerateCurve, tiltDeg: number): number {
 }
 
 /**
- * Returns derate (0..1) for a given orientation × tilt.
+ * Returns derate (0..1) for a given orientation × tilt at the requested hemisphere.
  *
- * For orientations with full Resinc data (currently just N), uses the curve directly.
- * For other orientations with only a 30° datapoint, applies North's tilt-curve "shape"
- * relative to the orientation's optimal tilt — that is, the additional derate from
- * being X degrees off the optimum is taken from North's known curve.
+ * In the northern hemisphere, the sun tracks across the southern sky, so
+ * "South" is the optimal orientation. Internally we flip N↔S, NE↔SE, NW↔SW
+ * before looking up the curve, so the same Resinc-calibrated tables work for
+ * both hemispheres.
  */
-export function derateFor(orientation: Orientation, tiltDeg: number): number {
-  const resolved = MIRROR[orientation] ?? orientation;
+export function derateFor(
+  orientation: Orientation,
+  tiltDeg: number,
+  hemisphere: Hemisphere = "S"
+): number {
+  const flipped = hemisphere === "N" ? FLIP_NS[orientation] : orientation;
+  const resolved = MIRROR[flipped] ?? flipped;
   const curve = DERATE_CURVES[resolved];
   const tilts = Object.keys(curve).map(Number);
 
@@ -117,10 +140,11 @@ export function derateFor(orientation: Orientation, tiltDeg: number): number {
     return interpolateCurve(curve, tiltDeg);
   }
 
-  // Single-anchor orientation: borrow North's tilt-shape, anchored at this
-  // orientation's optimum tilt. Falls back gracefully when more data lands.
+  // Single-anchor fallback: borrow North's tilt-shape, anchored at this
+  // orientation's optimum tilt. Kept as a safety net for any future
+  // orientation that lands with only one datapoint.
   const optimalTilt = OPTIMAL_TILT[resolved];
-  const anchoredTilt = tilts[0]; // typically 30
+  const anchoredTilt = tilts[0];
   const anchorDerate = curve[anchoredTilt];
 
   const nCurve = DERATE_CURVES.N;
@@ -154,8 +178,19 @@ export function calculateSolarProduction(args: {
   tiltByOrientation: OrientationTilt;
   panelWattage: number;
   shadingDeratePct: number;
+  /** Defaults to Brisbane (5.1) for backwards compatibility. */
+  peakSunHours?: number;
+  /** Defaults to "S" (Australia) for backwards compatibility. */
+  hemisphere?: Hemisphere;
 }): SolarProductionResult {
-  const { panelsByOrientation, tiltByOrientation, panelWattage, shadingDeratePct } = args;
+  const {
+    panelsByOrientation,
+    tiltByOrientation,
+    panelWattage,
+    shadingDeratePct,
+    peakSunHours = DEFAULT_PEAK_SUN_HOURS,
+    hemisphere = "S",
+  } = args;
 
   const totalPanels = ORIENTATIONS.reduce((sum, o) => sum + (panelsByOrientation[o] || 0), 0);
   const systemSizeKw = (totalPanels * panelWattage) / 1000;
@@ -167,10 +202,10 @@ export function calculateSolarProduction(args: {
     const panels = panelsByOrientation[o] || 0;
     if (panels <= 0) continue;
     const tilt = tiltByOrientation[o] ?? 30;
-    const orientationDerate = derateFor(o, tilt);
+    const orientationDerate = derateFor(o, tilt, hemisphere);
     const arrayKw = (panels * panelWattage) / 1000;
     const dailyForArray =
-      arrayKw * PEAK_SUN_HOURS * (1 - orientationDerate) * (1 - shadingDeratePct);
+      arrayKw * peakSunHours * (1 - orientationDerate) * (1 - shadingDeratePct);
     totalDailyKwh += dailyForArray;
     weightedDerateTimesPanels += orientationDerate * panels;
   }

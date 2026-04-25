@@ -3,6 +3,7 @@ import { theme } from "@/config/theme";
 import { formatMoney } from "@/lib/format";
 import { SectionHeader } from "@/components/layout/SectionHeader";
 import { ClosingCallout } from "@/components/sections/Section1RealCost/ClosingCallout";
+import { LocationPicker } from "./LocationPicker";
 import { SpecsGrid } from "./SpecsGrid";
 import { ProductionChart } from "./ProductionChart";
 
@@ -22,6 +23,10 @@ export function Section2System() {
       />
 
       <div className="mt-10">
+        <LocationPicker />
+      </div>
+
+      <div className="mt-5">
         <SpecsGrid />
       </div>
 
