@@ -82,8 +82,12 @@ describe("Solar production parity with Resinc", () => {
   it("matches Resinc NE at 40° (180 kWh/day)", () => expect(dailyKwhFor("NE", 40)).toBe(180));
   it("matches Resinc NE at 50° (173 kWh/day)", () => expect(dailyKwhFor("NE", 50)).toBe(173));
 
-  // Single-datapoint orientations at 30° (anchored)
-  it("matches Resinc SE at 30° (137 kWh/day)", () => expect(dailyKwhFor("SE")).toBe(137));
+  // SE — full curve validated across 5 datapoints (10°-50°), plus 0° rule
+  it("matches Resinc SE at 10° (162 kWh/day)", () => expect(dailyKwhFor("SE", 10)).toBe(162));
+  it("matches Resinc SE at 20° (150 kWh/day)", () => expect(dailyKwhFor("SE", 20)).toBe(150));
+  it("matches Resinc SE at 30° (137 kWh/day)", () => expect(dailyKwhFor("SE", 30)).toBe(137));
+  it("matches Resinc SE at 40° (123 kWh/day)", () => expect(dailyKwhFor("SE", 40)).toBe(123));
+  it("matches Resinc SE at 50° (108 kWh/day)", () => expect(dailyKwhFor("SE", 50)).toBe(108));
 
   it("preserves the published 30° derates exactly", () => {
     expect(derateFor("N", 30)).toBeCloseTo(0.15, 5);

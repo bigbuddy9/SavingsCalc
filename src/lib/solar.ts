@@ -56,14 +56,13 @@ const DERATE_CURVES: Record<Orientation, DerateCurve> = {
   // Fully validated against Resinc (6 datapoints across 0°-50°)
   NE: { 0: 0.25, 10: 0.20, 20: 0.18, 30: 0.18, 40: 0.20, 50: 0.23 },
 
-  // Anchored at 0° (universal rule) and 30° (Resinc).
-  // Awaiting full curve datapoints for 10°/20°/40°/50°.
-  SE: { 0: 0.25, 30: 0.39 },
+  // Fully validated against Resinc (6 datapoints across 0°-50°)
+  SE: { 0: 0.25, 10: 0.28, 20: 0.33, 30: 0.39, 40: 0.45, 50: 0.52 },
 
   // Mirrors — resolved at lookup time via MIRROR map.
   NW: { 0: 0.25, 10: 0.20, 20: 0.18, 30: 0.18, 40: 0.20, 50: 0.23 },
   W:  { 0: 0.25, 10: 0.24, 20: 0.26, 30: 0.28, 40: 0.32, 50: 0.36 },
-  SW: { 0: 0.25, 30: 0.39 },
+  SW: { 0: 0.25, 10: 0.28, 20: 0.33, 30: 0.39, 40: 0.45, 50: 0.52 },
 };
 
 /** Optimal tilt per orientation for Australian latitudes (~28-35°S). */
