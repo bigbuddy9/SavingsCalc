@@ -109,8 +109,13 @@ function EditableRow({
         type="text"
         value={label}
         onChange={(e) => onLabelChange(e.target.value)}
+        onBlur={(e) => {
+          // auto-remove blank rows so we don't leave ghosts behind
+          if (e.target.value.trim() === "") onRemove();
+        }}
+        placeholder="Line item name"
         aria-label="Line item label"
-        className="flex-1 min-w-0 bg-transparent border border-transparent rounded-md px-2 py-1.5 -ml-2 text-[15px] text-ink-soft hover:border-line focus:border-edit-ring focus:bg-edit/40 focus:outline-none focus:ring-2 focus:ring-edit-ring/30 transition-colors"
+        className="flex-1 min-w-0 bg-transparent border border-transparent rounded-md px-2 py-1.5 -ml-2 text-[15px] text-ink-soft hover:border-line focus:border-edit-ring focus:bg-edit/40 focus:outline-none focus:ring-2 focus:ring-edit-ring/30 transition-colors placeholder:text-ink-faint placeholder:italic"
       />
       <div className="w-40 shrink-0">
         <NumberInput
@@ -118,13 +123,13 @@ function EditableRow({
           onChange={onAmountChange}
           prefix="$"
           size="sm"
-          ariaLabel={`${label} amount`}
+          ariaLabel={`${label || "Line item"} amount`}
         />
       </div>
       <button
         type="button"
         onClick={onRemove}
-        aria-label={`Remove ${label}`}
+        aria-label={`Remove ${label || "line item"}`}
         className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-md text-ink-faint hover:text-pain hover:bg-pain/10 transition-colors"
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>

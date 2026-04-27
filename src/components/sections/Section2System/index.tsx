@@ -6,7 +6,7 @@ import { SpecsGrid } from "./SpecsGrid";
 import { ProductionChart } from "./ProductionChart";
 
 export function Section2System() {
-  const { system } = useCalculator();
+  const { system, cashflow } = useCalculator();
   const copy = theme.copy.section2;
 
   return (
@@ -32,7 +32,10 @@ export function Section2System() {
         <h3 className="mb-5 text-xl md:text-2xl font-semibold text-ink tracking-tight">
           {copy.chartTitle}
         </h3>
-        <ProductionChart data={system.monthly} />
+        <ProductionChart
+          data={system.monthly}
+          cashflowPositiveDay1={cashflow.cashflowPositiveDay1}
+        />
       </div>
     </section>
   );

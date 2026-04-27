@@ -15,13 +15,32 @@ const COVERED_FILL = "#059669";   // gain-DEFAULT — flat green for months sola
 const UNCOVERED_FILL = "#EAB308"; // matches USAGE_LINE — months that fall short read as "the yellow line you can't reach"
 const USAGE_LINE = "#EAB308";     // yellow-500
 
-export function ProductionChart({ data }: { data: SystemMonthRow[] }) {
+export function ProductionChart({
+  data,
+  cashflowPositiveDay1 = false,
+}: {
+  data: SystemMonthRow[];
+  cashflowPositiveDay1?: boolean;
+}) {
   const fullyCovered = data.length > 0 && data.every((m) => m.production >= m.usage);
   const shortMonths = data.filter((m) => m.production < m.usage).length;
 
+  // Three banner states (in priority order):
+  //   1. fully covered + cashflow positive day 1 → "$0 out of pocket"
+  //   2. fully covered only                       → "covered every month"
+  //   3. partial coverage                         → "X months fall short"
+  let banner: React.ReactNode;
+  if (fullyCovered && cashflowPositiveDay1) {
+    banner = <CoverageBanner tone="day1" />;
+  } else if (fullyCovered) {
+    banner = <CoverageBanner tone="full" />;
+  } else {
+    banner = <CoverageBanner tone="partial" shortMonths={shortMonths} />;
+  }
+
   return (
     <div className="rounded-2xl border border-line bg-surface p-5 md:p-7 shadow-card">
-      {fullyCovered ? <CoverageBanner tone="full" /> : <CoverageBanner tone="partial" shortMonths={shortMonths} />}
+      {banner}
 
       <div className="h-[360px] w-full">
         <ResponsiveContainer>
@@ -116,9 +135,24 @@ function CoverageBanner({
   tone,
   shortMonths,
 }: {
-  tone: "full" | "partial";
+  tone: "full" | "partial" | "day1";
   shortMonths?: number;
 }) {
+  if (tone === "day1") {
+    return (
+      <div className="mb-4 rounded-lg bg-gain/10 border border-gain/30 px-4 py-3">
+        <div className="flex items-center gap-2.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-full bg-gain shadow-[0_0_10px_2px_rgba(5,150,105,0.55)]" />
+          <span className="text-[14px] font-bold text-gain-ink">
+            Cashflow positive from day one — this system costs you $0 out of pocket.
+          </span>
+        </div>
+        <p className="mt-1 ml-5 text-[12.5px] text-ink-soft">
+          Solar covers every month of usage and your year-1 savings already beat the loan repayments.
+        </p>
+      </div>
+    );
+  }
   if (tone === "full") {
     return (
       <div className="mb-4 flex items-center gap-2.5 rounded-lg bg-gain/10 border border-gain/30 px-4 py-2.5">

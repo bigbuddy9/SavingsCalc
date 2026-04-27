@@ -53,6 +53,9 @@ export type CalculatorInputs = {
   // Section 4
   loanTerm: number;
   interestRate: number;
+  deposit: number;
+  setupFee: number;
+  monthlyFee: number;
 };
 
 const ZERO_PANELS: OrientationPanelCount = ORIENTATIONS.reduce((acc, o) => {
@@ -100,6 +103,9 @@ const DEFAULTS: CalculatorInputs = {
 
   loanTerm: 10,
   interestRate: 6.29,
+  deposit: 0,
+  setupFee: 0,
+  monthlyFee: 0,
 };
 
 export type CalculatorContextValue = {
@@ -154,7 +160,7 @@ export function CalculatorProvider({ children }: { children: ReactNode }) {
       ...prev,
       priceLineItems: [
         ...prev.priceLineItems,
-        { id: `custom-${Date.now()}`, label: "New line item", amount: 0 },
+        { id: `custom-${Date.now()}`, label: "", amount: 0 },
       ],
     }));
   };
@@ -231,7 +237,10 @@ export function CalculatorProvider({ children }: { children: ReactNode }) {
     pricing.investment,
     system.year1Savings,
     inputs.loanTerm,
-    inputs.interestRate
+    inputs.interestRate,
+    inputs.deposit,
+    inputs.setupFee,
+    inputs.monthlyFee
   );
 
   const value = useMemo<CalculatorContextValue>(
