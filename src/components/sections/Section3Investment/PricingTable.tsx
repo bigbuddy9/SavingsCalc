@@ -3,37 +3,40 @@ import { NumberInput } from "@/components/inputs/NumberInput";
 import { formatMoney } from "@/lib/format";
 import type { CalculatorInputs } from "@/state/CalculatorContext";
 
-type LineItem = { key: keyof CalculatorInputs; label: string };
-
-const LINE_ITEMS: LineItem[] = [
-  { key: "priceSystem", label: "System cost (panels + install)" },
-  { key: "priceInverter", label: "Inverter" },
-  { key: "priceMetering", label: "Metering" },
-  { key: "priceSiteInspection", label: "Site inspection" },
-  { key: "priceSplitArray", label: "Split array" },
-  { key: "priceRoofHeight", label: "Roof height" },
-  { key: "priceOther", label: "Other" },
-];
-
 export function PricingTable() {
-  const { inputs, setInput, pricing } = useCalculator();
+  const {
+    inputs,
+    setInput,
+    pricing,
+    addPriceLineItem,
+    removePriceLineItem,
+    updatePriceLineItem,
+  } = useCalculator();
 
   return (
     <div className="rounded-2xl border border-line bg-surface shadow-card overflow-hidden">
       <div className="divide-y divide-line/70">
-        {LINE_ITEMS.map((item) => (
-          <Row key={item.key} label={item.label}>
-            <div className="w-40">
-              <NumberInput
-                value={inputs[item.key] as number}
-                onChange={(n) => setInput(item.key, n as never)}
-                prefix="$"
-                size="sm"
-                ariaLabel={item.label}
-              />
-            </div>
-          </Row>
+        {inputs.priceLineItems.map((item) => (
+          <EditableRow
+            key={item.id}
+            label={item.label}
+            amount={item.amount}
+            onLabelChange={(label) => updatePriceLineItem(item.id, { label })}
+            onAmountChange={(amount) => updatePriceLineItem(item.id, { amount })}
+            onRemove={() => removePriceLineItem(item.id)}
+          />
         ))}
+
+        <div className="px-6 md:px-8 py-3">
+          <button
+            type="button"
+            onClick={addPriceLineItem}
+            className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink-muted hover:text-ink transition-colors"
+          >
+            <span aria-hidden className="text-base leading-none">+</span>
+            Add line item
+          </button>
+        </div>
 
         <Row label="System value (inc GST)" emphasis>
           <span className="text-lg font-semibold text-ink num">
@@ -83,6 +86,51 @@ export function PricingTable() {
           {formatMoney(pricing.investment)}
         </div>
       </div>
+    </div>
+  );
+}
+
+function EditableRow({
+  label,
+  amount,
+  onLabelChange,
+  onAmountChange,
+  onRemove,
+}: {
+  label: string;
+  amount: number;
+  onLabelChange: (label: string) => void;
+  onAmountChange: (amount: number) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="group flex items-center gap-3 px-6 md:px-8 py-3">
+      <input
+        type="text"
+        value={label}
+        onChange={(e) => onLabelChange(e.target.value)}
+        aria-label="Line item label"
+        className="flex-1 min-w-0 bg-transparent border border-transparent rounded-md px-2 py-1.5 -ml-2 text-[15px] text-ink-soft hover:border-line focus:border-edit-ring focus:bg-edit/40 focus:outline-none focus:ring-2 focus:ring-edit-ring/30 transition-colors"
+      />
+      <div className="w-40 shrink-0">
+        <NumberInput
+          value={amount}
+          onChange={onAmountChange}
+          prefix="$"
+          size="sm"
+          ariaLabel={`${label} amount`}
+        />
+      </div>
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={`Remove ${label}`}
+        className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-md text-ink-faint hover:text-pain hover:bg-pain/10 transition-colors"
+      >
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
+          <path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+        </svg>
+      </button>
     </div>
   );
 }

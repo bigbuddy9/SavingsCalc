@@ -14,7 +14,6 @@ export function Section3Investment() {
             Your <span className="text-ink">investment</span> breakdown.
           </>
         }
-        intro="Every line item, including the federal STC rebate. No hidden costs, no surprises at install."
       />
 
       <div className="mt-10 max-w-3xl">

@@ -29,12 +29,9 @@ export function Section2System() {
       </div>
 
       <div className="mt-12">
-        <div className="mb-5">
-          <h3 className="text-xl md:text-2xl font-semibold text-ink tracking-tight">
-            {copy.chartTitle}
-          </h3>
-          <p className="mt-2 text-[14px] text-ink-muted max-w-3xl">{copy.chartSubtitle}</p>
-        </div>
+        <h3 className="mb-5 text-xl md:text-2xl font-semibold text-ink tracking-tight">
+          {copy.chartTitle}
+        </h3>
         <ProductionChart data={system.monthly} />
       </div>
     </section>

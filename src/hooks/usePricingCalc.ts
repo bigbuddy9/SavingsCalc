@@ -1,13 +1,13 @@
 import { useMemo } from "react";
 
+export type PriceLineItem = {
+  id: string;
+  label: string;
+  amount: number;
+};
+
 export type PricingInputs = {
-  priceSystem: number;
-  priceInverter: number;
-  priceMetering: number;
-  priceSiteInspection: number;
-  priceSplitArray: number;
-  priceRoofHeight: number;
-  priceOther: number;
+  priceLineItems: PriceLineItem[];
   solarStcs: number;
   solarStcPrice: number;
   batteryStcs: number;
@@ -27,14 +27,10 @@ export function usePricingCalc(inputs: PricingInputs): PricingResult {
   return useMemo(() => {
     const num = (n: number) => (Number.isFinite(n) ? n : 0);
 
-    const systemValue =
-      num(inputs.priceSystem) +
-      num(inputs.priceInverter) +
-      num(inputs.priceMetering) +
-      num(inputs.priceSiteInspection) +
-      num(inputs.priceSplitArray) +
-      num(inputs.priceRoofHeight) +
-      num(inputs.priceOther);
+    const systemValue = inputs.priceLineItems.reduce(
+      (sum, item) => sum + num(item.amount),
+      0
+    );
 
     const solarStcDeduction = num(inputs.solarStcs) * num(inputs.solarStcPrice);
     const batteryStcDeduction = num(inputs.batteryStcs) * num(inputs.batteryStcPrice);

@@ -1,7 +1,12 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import { useRealCostCalc, type RealCostResult } from "@/hooks/useRealCostCalc";
 import { useSystemCalc, type SystemResult } from "@/hooks/useSystemCalc";
-import { usePricingCalc, type PricingInputs, type PricingResult } from "@/hooks/usePricingCalc";
+import {
+  usePricingCalc,
+  type PriceLineItem,
+  type PricingInputs,
+  type PricingResult,
+} from "@/hooks/usePricingCalc";
 import { useCashflowCalc, type CashflowResult } from "@/hooks/useCashflowCalc";
 import {
   ORIENTATIONS,
@@ -37,14 +42,8 @@ export type CalculatorInputs = {
   peakRate: number;               // $/kWh
   fitRate: number;                // $/kWh
 
-  // Section 3 — pricing
-  priceSystem: number;
-  priceInverter: number;
-  priceMetering: number;
-  priceSiteInspection: number;
-  priceSplitArray: number;
-  priceRoofHeight: number;
-  priceOther: number;
+  // Section 3 — pricing (line items are user-editable: add / rename / remove)
+  priceLineItems: PriceLineItem[];
   solarStcs: number;
   solarStcPrice: number;
   batteryStcs: number;
@@ -84,13 +83,15 @@ const DEFAULTS: CalculatorInputs = {
   peakRate: 0.37,
   fitRate: 0.05,
 
-  priceSystem: 62332,
-  priceInverter: 6000,
-  priceMetering: 850,
-  priceSiteInspection: 198,
-  priceSplitArray: 360,
-  priceRoofHeight: 276,
-  priceOther: 0,
+  priceLineItems: [
+    { id: "system",         label: "System cost (panels + install)", amount: 62332 },
+    { id: "inverter",       label: "Inverter",                       amount: 6000  },
+    { id: "metering",       label: "Metering",                       amount: 850   },
+    { id: "siteInspection", label: "Site inspection",                amount: 198   },
+    { id: "splitArray",     label: "Split array",                    amount: 360   },
+    { id: "roofHeight",     label: "Roof height",                    amount: 276   },
+    { id: "other",          label: "Other",                          amount: 0     },
+  ],
   solarStcs: 83,
   solarStcPrice: 39,
   batteryStcs: 372,
@@ -107,6 +108,9 @@ export type CalculatorContextValue = {
   setPanelsForOrientation: (o: Orientation, n: number) => void;
   setTiltForOrientation: (o: Orientation, deg: number) => void;
   setCountry: (country: Country) => void;
+  addPriceLineItem: () => void;
+  removePriceLineItem: (id: string) => void;
+  updatePriceLineItem: (id: string, patch: Partial<Omit<PriceLineItem, "id">>) => void;
   /** Resolved location (city/state/hemisphere/peak-sun) derived from country + postcode. */
   location: LocationResult;
   realCost: RealCostResult;
@@ -145,6 +149,35 @@ export function CalculatorProvider({ children }: { children: ReactNode }) {
     );
   };
 
+  const addPriceLineItem = () => {
+    setInputs((prev) => ({
+      ...prev,
+      priceLineItems: [
+        ...prev.priceLineItems,
+        { id: `custom-${Date.now()}`, label: "New line item", amount: 0 },
+      ],
+    }));
+  };
+
+  const removePriceLineItem = (id: string) => {
+    setInputs((prev) => ({
+      ...prev,
+      priceLineItems: prev.priceLineItems.filter((i) => i.id !== id),
+    }));
+  };
+
+  const updatePriceLineItem = (
+    id: string,
+    patch: Partial<Omit<PriceLineItem, "id">>
+  ) => {
+    setInputs((prev) => ({
+      ...prev,
+      priceLineItems: prev.priceLineItems.map((i) =>
+        i.id === id ? { ...i, ...patch } : i
+      ),
+    }));
+  };
+
   const location = useMemo<LocationResult>(
     () => lookupLocation(inputs.country, inputs.postcode) ?? {
       country: inputs.country,
@@ -174,13 +207,7 @@ export function CalculatorProvider({ children }: { children: ReactNode }) {
 
   const pricingInputs: PricingInputs = useMemo(
     () => ({
-      priceSystem: inputs.priceSystem,
-      priceInverter: inputs.priceInverter,
-      priceMetering: inputs.priceMetering,
-      priceSiteInspection: inputs.priceSiteInspection,
-      priceSplitArray: inputs.priceSplitArray,
-      priceRoofHeight: inputs.priceRoofHeight,
-      priceOther: inputs.priceOther,
+      priceLineItems: inputs.priceLineItems,
       solarStcs: inputs.solarStcs,
       solarStcPrice: inputs.solarStcPrice,
       batteryStcs: inputs.batteryStcs,
@@ -188,13 +215,7 @@ export function CalculatorProvider({ children }: { children: ReactNode }) {
       discount: inputs.discount,
     }),
     [
-      inputs.priceSystem,
-      inputs.priceInverter,
-      inputs.priceMetering,
-      inputs.priceSiteInspection,
-      inputs.priceSplitArray,
-      inputs.priceRoofHeight,
-      inputs.priceOther,
+      inputs.priceLineItems,
       inputs.solarStcs,
       inputs.solarStcPrice,
       inputs.batteryStcs,
@@ -220,6 +241,9 @@ export function CalculatorProvider({ children }: { children: ReactNode }) {
       setPanelsForOrientation,
       setTiltForOrientation,
       setCountry,
+      addPriceLineItem,
+      removePriceLineItem,
+      updatePriceLineItem,
       location,
       realCost,
       system,
