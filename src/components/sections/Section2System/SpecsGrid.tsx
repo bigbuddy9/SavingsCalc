@@ -1,6 +1,6 @@
 import { useCalculator } from "@/state/CalculatorContext";
 import { NumberInput } from "@/components/inputs/NumberInput";
-import { formatMoney, formatKwh } from "@/lib/format";
+import { formatKwh } from "@/lib/format";
 import { ORIENTATION_LABEL, ORIENTATIONS, type Orientation } from "@/lib/solar";
 
 export function SpecsGrid() {
@@ -98,13 +98,6 @@ export function SpecsGrid() {
               />
             </Field>
           </div>
-          <div className="mt-4 text-[12.5px] text-ink-muted">
-            Solar covers{" "}
-            <span className="font-semibold text-ink num">
-              {Math.round(system.solarCoveragePct)}%
-            </span>{" "}
-            of daily usage.
-          </div>
         </div>
 
         <div className="rounded-2xl border border-line bg-surface p-6 md:p-7 shadow-card">
@@ -112,14 +105,14 @@ export function SpecsGrid() {
             Rates
           </h4>
           <div className="mt-5 grid grid-cols-2 gap-5">
-            <Field label="Peak rate" hint="$/kWh from the grid">
+            <Field label="Average rate" hint="Average electricity rate ($/kWh)">
               <NumberInput
                 value={inputs.peakRate}
                 onChange={(n) => setInput("peakRate", n)}
                 prefix="$"
                 decimals={2}
                 step={0.01}
-                ariaLabel="Peak rate"
+                ariaLabel="Average rate"
               />
             </Field>
             <Field label="Feed-in tariff" hint="$/kWh credited for export">
@@ -144,8 +137,8 @@ export function SpecsGrid() {
             <Stat label="Annual production" value={formatKwh(system.annualProductionKwh)} />
             <Stat label="Weighted derate" value={`${Math.round(system.weightedDeratePct * 100)}%`} />
             <Stat
-              label="Year-1 savings"
-              value={formatMoney(system.year1Savings)}
+              label="Solar coverage"
+              value={`${Math.round(system.solarCoveragePct)}%`}
               accent
             />
           </div>

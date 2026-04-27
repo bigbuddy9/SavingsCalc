@@ -14,7 +14,7 @@ export const theme = {
       eyebrow: "Section 01 · The cost of doing nothing",
       title: "The real cost of your power.",
       tableNote:
-        "Calculations compound at an indicative 8% annual price increase, based on industry forecasts for Australian electricity pricing.",
+        "Calculations compound at an indicative 8% annual price increase, based on industry forecasts for national electricity pricing and the past decade of recorded price rises.",
       closingTagline: "That's not a typo. That's the real cost of doing nothing.",
     },
     section2: {
@@ -22,7 +22,7 @@ export const theme = {
       title: "Your custom solar system.",
       chartTitle: "Estimated daily solar production by month",
       chartSubtitle:
-        "Bars show daily production. The dashed line is your daily usage — see how summer easily covers it, and how winter gets close.",
+        "Bars show daily production. The yellow line is your daily usage — green months cover it; amber months fall short.",
       closingTagline: "And that number grows every year as power prices rise.",
     },
     section3: {
