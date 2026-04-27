@@ -14,7 +14,7 @@ export const theme = {
       eyebrow: "Section 01 · The cost of doing nothing",
       title: "The real cost of your power.",
       tableNote:
-        "Calculations compound at an indicative 8% annual price increase, based on industry forecasts for national electricity pricing and the past decade of recorded price rises.",
+        "Calculations compound at an indicative 8% annual price increase, based on industry forecasts for national electricity pricing and the past decade of recorded price changes.",
       closingTagline: "That's not a typo. That's the real cost of doing nothing.",
     },
     section2: {

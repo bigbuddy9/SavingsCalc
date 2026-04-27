@@ -135,7 +135,10 @@ export function SpecsGrid() {
           <div className="mt-5 grid grid-cols-2 gap-x-5 gap-y-4">
             <Stat label="Daily production" value={formatKwh(system.dailyProductionKwh)} />
             <Stat label="Annual production" value={formatKwh(system.annualProductionKwh)} />
-            <Stat label="Weighted derate" value={`${Math.round(system.weightedDeratePct * 100)}%`} />
+            <Stat
+              label="Panel efficiency"
+              value={`${Math.round((1 - system.weightedDeratePct) * 100)}%`}
+            />
             <Stat
               label="Solar coverage"
               value={`${Math.round(system.solarCoveragePct)}%`}
