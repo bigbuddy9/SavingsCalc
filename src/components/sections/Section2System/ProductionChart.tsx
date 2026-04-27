@@ -11,9 +11,9 @@ import {
 } from "recharts";
 import type { SystemMonthRow } from "@/hooks/useSystemCalc";
 
-const COVERED_FILL = "url(#prodFillCovered)";
-const UNCOVERED_FILL = "url(#prodFillShort)";
-const USAGE_LINE = "#EAB308"; // yellow-500
+const COVERED_FILL = "#059669";   // gain-DEFAULT — flat green for months solar covers
+const UNCOVERED_FILL = "#EAB308"; // matches USAGE_LINE — months that fall short read as "the yellow line you can't reach"
+const USAGE_LINE = "#EAB308";     // yellow-500
 
 export function ProductionChart({ data }: { data: SystemMonthRow[] }) {
   const fullyCovered = data.length > 0 && data.every((m) => m.production >= m.usage);
@@ -27,14 +27,6 @@ export function ProductionChart({ data }: { data: SystemMonthRow[] }) {
         <ResponsiveContainer>
           <ComposedChart data={data} margin={{ top: 16, right: 16, bottom: 8, left: 0 }}>
             <defs>
-              <linearGradient id="prodFillCovered" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#10B981" stopOpacity={1} />
-                <stop offset="100%" stopColor="#059669" stopOpacity={0.85} />
-              </linearGradient>
-              <linearGradient id="prodFillShort" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#FBBF24" stopOpacity={0.95} />
-                <stop offset="100%" stopColor="#D97706" stopOpacity={0.85} />
-              </linearGradient>
               <filter id="usageGlow" x="-30%" y="-50%" width="160%" height="200%">
                 <feGaussianBlur stdDeviation="3" result="blur" />
                 <feMerge>
@@ -99,8 +91,8 @@ export function ProductionChart({ data }: { data: SystemMonthRow[] }) {
               dataKey="usage"
               name="Your daily usage"
               stroke={USAGE_LINE}
-              strokeWidth={fullyCovered ? 3 : 2.25}
-              strokeDasharray={fullyCovered ? undefined : "6 5"}
+              strokeWidth={fullyCovered ? 4 : 3.25}
+              strokeDasharray={fullyCovered ? undefined : "7 5"}
               strokeLinecap="round"
               filter={fullyCovered ? "url(#usageGlow)" : undefined}
               dot={false}
@@ -112,8 +104,8 @@ export function ProductionChart({ data }: { data: SystemMonthRow[] }) {
       </div>
 
       <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px] text-ink-muted">
-        <Legend swatchClass="bg-gain" label="Covers your usage" />
-        <Legend swatchClass="bg-accent" label="Falls short" />
+        <Legend swatchColor={COVERED_FILL} label="Covers your usage" />
+        <Legend swatchColor={UNCOVERED_FILL} label="Falls short" />
         <Legend lineColor={USAGE_LINE} dashed={!fullyCovered} label="Your daily usage" />
       </div>
     </div>
@@ -146,12 +138,12 @@ function CoverageBanner({
 }
 
 function Legend({
-  swatchClass,
+  swatchColor,
   lineColor,
   label,
   dashed = false,
 }: {
-  swatchClass?: string;
+  swatchColor?: string;
   lineColor?: string;
   label: string;
   dashed?: boolean;
@@ -166,7 +158,10 @@ function Legend({
           }}
         />
       ) : (
-        <span className={`inline-block h-2.5 w-2.5 rounded-sm ${swatchClass}`} />
+        <span
+          className="inline-block h-2.5 w-2.5 rounded-sm"
+          style={{ backgroundColor: swatchColor }}
+        />
       )}
       <span>{label}</span>
     </span>

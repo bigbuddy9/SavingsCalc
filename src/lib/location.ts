@@ -190,12 +190,12 @@ export function lookupLocation(country: Country, postcode: string): LocationResu
   };
 }
 
-/** Default location used when nothing else is set — Brisbane (matches Resinc calibration). */
+/** Default location used when nothing else is set — Sydney, Australia's largest market. */
 export const DEFAULT_LOCATION: LocationResult = {
   country: "AU",
-  postcode: "4155",
-  city: "Brisbane",
-  state: "QLD",
+  postcode: "2000",
+  city: "Sydney",
+  state: "NSW",
   hemisphere: "S",
-  peakSunHours: 5.1,
+  peakSunHours: 4.8,
 };

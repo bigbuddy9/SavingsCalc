@@ -225,11 +225,13 @@ function Field({
   hint?: string;
   children: React.ReactNode;
 }) {
+  // flex column with input pinned to the bottom — keeps the yellow boxes
+  // perfectly aligned across columns even when one hint wraps to two lines.
   return (
-    <label className="block">
+    <label className="flex h-full flex-col">
       <span className="block text-[13px] font-semibold text-ink mb-0.5">{label}</span>
       {hint && <span className="block text-[11.5px] text-ink-muted mb-2">{hint}</span>}
-      {children}
+      <div className="mt-auto">{children}</div>
     </label>
   );
 }
