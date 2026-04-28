@@ -1,9 +1,13 @@
+import { useCalculator } from "@/state/CalculatorContext";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import type { CashflowYearRow } from "@/hooks/useCashflowCalc";
 
 export function CashflowTable({ years }: { years: CashflowYearRow[] }) {
+  const { pricing } = useCalculator();
+  const investment = Math.max(1, pricing.investment); // avoid div-by-zero in ROI
   const rows = years.slice(0, 15);
+
   return (
     <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
       <div className="overflow-x-auto">
@@ -15,15 +19,35 @@ export function CashflowTable({ years }: { years: CashflowYearRow[] }) {
               <Th>Annual savings</Th>
               <Th>Net cashflow</Th>
               <Th>Cumulative net</Th>
+              <Th>ROI</Th>
             </tr>
           </thead>
           <tbody>
             {rows.map((y) => {
               const netPositive = y.netAnnual >= 0;
               const cumPositive = y.cumNet >= 0;
+              const roi = (y.cumNet / investment) * 100;
+              const roiText = `${roi >= 0 ? "" : "−"}${Math.abs(roi).toFixed(1)}%`;
+
+              // Subtle row tint that follows the cumulative net — gives the
+              // table a top-to-bottom red→green flow as years roll over.
+              const rowTint = cumPositive
+                ? "bg-gain/[0.04] hover:bg-gain/[0.08]"
+                : "bg-pain/[0.03] hover:bg-pain/[0.06]";
+
               return (
-                <tr key={y.year} className="border-t border-line/70 hover:bg-surface-alt/60 transition-colors">
-                  <td className="px-5 py-3 text-[13px] font-semibold text-ink-muted">
+                <tr
+                  key={y.year}
+                  className={cn("border-t border-line/70 transition-colors", rowTint)}
+                >
+                  <td className="relative px-5 py-3 text-[13px] font-semibold text-ink-muted">
+                    <span
+                      aria-hidden
+                      className={cn(
+                        "absolute left-0 top-2 bottom-2 w-[3px] rounded-r-sm",
+                        cumPositive ? "bg-gain" : "bg-pain"
+                      )}
+                    />
                     Year {y.year}
                   </td>
                   <Td>
@@ -35,6 +59,9 @@ export function CashflowTable({ years }: { years: CashflowYearRow[] }) {
                   </Td>
                   <Td className={cn("italic font-semibold", cumPositive ? "text-gain" : "text-pain")}>
                     {cumPositive ? formatMoney(y.cumNet) : `−${formatMoney(Math.abs(y.cumNet))}`}
+                  </Td>
+                  <Td className={cn("font-semibold", roi >= 0 ? "text-gain" : "text-pain")}>
+                    {roiText}
                   </Td>
                 </tr>
               );

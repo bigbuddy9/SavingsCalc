@@ -23,11 +23,10 @@ export default function App() {
       </main>
 
       <footer className="border-t border-line/80 py-10 bg-surface">
-        <div className="container-narrow flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-[13px] text-ink-subtle">
+        <div className="container-narrow text-[13px] text-ink-subtle">
           <p>
             © {new Date().getFullYear()} {theme.brand.name}. All values are estimates for illustration.
           </p>
-          <p>Calculations assume an indicative 8% annual electricity price increase.</p>
         </div>
       </footer>
     </CalculatorProvider>

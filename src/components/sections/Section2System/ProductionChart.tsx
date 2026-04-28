@@ -140,16 +140,13 @@ function CoverageBanner({
 }) {
   if (tone === "day1") {
     return (
-      <div className="mb-4 rounded-lg bg-gain/10 border border-gain/30 px-4 py-3">
+      <div className="mb-4 rounded-lg bg-gain/[0.06] border border-gain/25 px-4 py-2.5">
         <div className="flex items-center gap-2.5">
-          <span className="inline-block h-2.5 w-2.5 rounded-full bg-gain shadow-[0_0_10px_2px_rgba(5,150,105,0.55)]" />
-          <span className="text-[14px] font-bold text-gain-ink">
-            Cashflow positive from day one — this system costs you $0 out of pocket.
+          <span className="inline-block h-2 w-2 rounded-full bg-gain" />
+          <span className="text-[13.5px] text-ink-soft">
+            Solar covers your usage every month, and year-1 savings exceed year-1 loan payments.
           </span>
         </div>
-        <p className="mt-1 ml-5 text-[12.5px] text-ink-soft">
-          Solar covers every month of usage and your year-1 savings already beat the loan repayments.
-        </p>
       </div>
     );
   }

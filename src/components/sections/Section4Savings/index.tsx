@@ -33,20 +33,16 @@ export function Section4Savings() {
       </div>
 
       {day1 && (
-        <div className="mt-6 rounded-2xl border border-gain/30 bg-gain/10 px-6 md:px-8 py-5">
-          <div className="flex items-start gap-3">
+        <div className="mt-6 rounded-2xl border border-gain/25 bg-gain/[0.06] px-6 md:px-8 py-4">
+          <div className="flex items-center gap-3">
             <span
               aria-hidden
-              className="mt-1 inline-block h-2.5 w-2.5 rounded-full bg-gain shadow-[0_0_10px_2px_rgba(5,150,105,0.55)]"
+              className="inline-block h-2 w-2 rounded-full bg-gain"
             />
-            <div>
-              <div className="text-[15px] font-bold text-gain-ink">
-                Cashflow positive from day one — this system costs you $0 out of pocket.
-              </div>
-              <p className="mt-1 text-[13px] text-ink-soft">
-                Your year-1 solar savings already exceed the loan repayments, fees included.
-              </p>
-            </div>
+            <p className="text-[14px] text-ink-soft">
+              Year-1 projected savings exceed year-1 loan repayments and fees.
+              Net cashflow is positive from year one.
+            </p>
           </div>
         </div>
       )}
@@ -64,17 +60,6 @@ export function Section4Savings() {
         </h3>
         <SavingsChart years={cashflow.years} />
 
-        {day1 && (
-          <div className="mt-6 rounded-2xl bg-ink text-white px-6 md:px-8 py-6">
-            <div className="text-[12px] font-semibold uppercase tracking-[0.18em] text-gain">
-              No-brainer
-            </div>
-            <p className="mt-2 text-lg md:text-xl font-semibold leading-snug">
-              This system doesn't cost you anything. You're one of the few that are
-              very lucky — this is a no-brainer.
-            </p>
-          </div>
-        )}
       </div>
 
       <div className="mt-12">

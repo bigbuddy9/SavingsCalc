@@ -15,7 +15,8 @@ import {
   type OrientationTilt,
 } from "@/lib/solar";
 import {
-  DEFAULT_LOCATION,
+  FALLBACK_HEMISPHERE,
+  FALLBACK_PEAK_SUN_HOURS,
   lookupLocation,
   type Country,
   type LocationResult,
@@ -69,11 +70,11 @@ const DEFAULT_TILTS: OrientationTilt = ORIENTATIONS.reduce((acc, o) => {
 }, {} as OrientationTilt);
 
 const DEFAULTS: CalculatorInputs = {
-  annualBill: 4917,
+  annualBill: 0,
   taxRate: 30,
 
-  country: DEFAULT_LOCATION.country,
-  postcode: DEFAULT_LOCATION.postcode,
+  country: "",
+  postcode: "",
 
   panelWatt: 440,
   // Default split mirrors the prototype: 23 panels, 11E + 12W
@@ -185,14 +186,16 @@ export function CalculatorProvider({ children }: { children: ReactNode }) {
   };
 
   const location = useMemo<LocationResult>(
-    () => lookupLocation(inputs.country, inputs.postcode) ?? {
-      country: inputs.country,
-      postcode: inputs.postcode,
-      city: "",
-      state: "",
-      hemisphere: inputs.country === "AU" ? "S" : "N",
-      peakSunHours: DEFAULT_LOCATION.peakSunHours,
-    },
+    () =>
+      lookupLocation(inputs.country, inputs.postcode) ?? {
+        country: inputs.country,
+        countryName: "",
+        postcode: inputs.postcode,
+        city: "",
+        state: "",
+        hemisphere: FALLBACK_HEMISPHERE,
+        peakSunHours: FALLBACK_PEAK_SUN_HOURS,
+      },
     [inputs.country, inputs.postcode]
   );
 
