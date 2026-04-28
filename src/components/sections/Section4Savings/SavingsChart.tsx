@@ -7,10 +7,11 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { formatMoney } from "@/lib/format";
+import { useCalculator } from "@/state/CalculatorContext";
 import type { CashflowYearRow } from "@/hooks/useCashflowCalc";
 
 export function SavingsChart({ years }: { years: CashflowYearRow[] }) {
+  const { formatMoney } = useCalculator();
   const data = years.map((y) => ({
     year: y.year,
     savings: Math.round(y.cumSavings),

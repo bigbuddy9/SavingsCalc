@@ -1,6 +1,5 @@
 import { useCalculator } from "@/state/CalculatorContext";
 import { theme } from "@/config/theme";
-import { formatMoney } from "@/lib/format";
 import { SectionHeader } from "@/components/layout/SectionHeader";
 import { NumberInput } from "@/components/inputs/NumberInput";
 import { CostTable } from "./CostTable";
@@ -8,7 +7,7 @@ import { SummaryGrid } from "./SummaryGrid";
 import { ClosingCallout } from "./ClosingCallout";
 
 export function Section1RealCost() {
-  const { inputs, setInput, realCost } = useCalculator();
+  const { inputs, setInput, realCost, formatMoney, currencySymbol } = useCalculator();
   const copy = theme.copy.section1;
 
   return (
@@ -30,7 +29,7 @@ export function Section1RealCost() {
           <NumberInput
             value={inputs.annualBill}
             onChange={(n) => setInput("annualBill", n)}
-            prefix="$"
+            prefix={currencySymbol}
             ariaLabel="Annual electricity bill"
             step={50}
           />

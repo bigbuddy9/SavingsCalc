@@ -1,5 +1,6 @@
 import { useCalculator } from "@/state/CalculatorContext";
 import { NumberInput } from "@/components/inputs/NumberInput";
+import { InfoTooltip } from "@/components/inputs/InfoTooltip";
 import { formatKwh } from "@/lib/format";
 import { ORIENTATION_LABEL, ORIENTATIONS, type Orientation } from "@/lib/solar";
 
@@ -10,6 +11,7 @@ export function SpecsGrid() {
     setPanelsForOrientation,
     setTiltForOrientation,
     system,
+    currencySymbol,
   } = useCalculator();
 
   return (
@@ -42,7 +44,11 @@ export function SpecsGrid() {
               {system.systemSizeKw.toFixed(2)} kW
             </div>
           </Field>
-          <Field label="Shading derate" hint="Trees, chimneys, neighbour blocks, etc.">
+          <Field
+            label="Shading derate"
+            hint="Trees, chimneys, neighbour blocks, etc."
+            tooltip="Percentage of theoretical output lost to obstacles that block sunlight (e.g. trees, chimneys, neighbouring buildings). 0% = unshaded; 10–15% is typical for a partially shaded roof."
+          >
             <NumberInput
               value={Math.round(inputs.shadingDeratePct * 100)}
               onChange={(n) => setInput("shadingDeratePct", Math.max(0, Math.min(100, n)) / 100)}
@@ -81,7 +87,11 @@ export function SpecsGrid() {
             Daily usage & self-use
           </h4>
           <div className="mt-5 grid grid-cols-2 gap-5">
-            <Field label="Daily usage" hint="What the home consumes per day">
+            <Field
+              label="Daily usage"
+              hint="What the home consumes per day"
+              tooltip="Average daily electricity consumption from your bill. Take annual kWh ÷ 365, or use the daily figure printed on most utility bills."
+            >
               <NumberInput
                 value={inputs.dailyUsage}
                 onChange={(n) => setInput("dailyUsage", n)}
@@ -89,7 +99,11 @@ export function SpecsGrid() {
                 ariaLabel="Daily usage"
               />
             </Field>
-            <Field label="Self-use" hint="Daily kWh covered by solar (incl. battery)">
+            <Field
+              label="Self-use"
+              hint="Daily kWh covered by solar (incl. battery)"
+              tooltip="Solar kWh actually consumed by the home each day — directly or stored in a battery. Anything you produce above this is exported to the grid for the feed-in tariff."
+            >
               <NumberInput
                 value={inputs.selfUseKwh}
                 onChange={(n) => setInput("selfUseKwh", n)}
@@ -105,21 +119,29 @@ export function SpecsGrid() {
             Rates
           </h4>
           <div className="mt-5 grid grid-cols-2 gap-5">
-            <Field label="Average rate" hint="Average electricity rate ($/kWh)">
+            <Field
+              label="Average rate"
+              hint="What you pay the grid per kWh."
+              tooltip="The average per-kWh price you pay your retailer. Most bills show this directly; if you have time-of-use pricing, blend peak and off-peak rates roughly by usage share."
+            >
               <NumberInput
                 value={inputs.peakRate}
                 onChange={(n) => setInput("peakRate", n)}
-                prefix="$"
+                prefix={currencySymbol}
                 decimals={2}
                 step={0.01}
                 ariaLabel="Average rate"
               />
             </Field>
-            <Field label="Feed-in tariff" hint="$/kWh credited for export">
+            <Field
+              label="Feed-in tariff"
+              hint="What the grid credits you per kWh you export."
+              tooltip="The rate your retailer pays for surplus solar exported to the grid. Usually much lower than the rate you pay to buy electricity — that's why self-use is more valuable than export."
+            >
               <NumberInput
                 value={inputs.fitRate}
                 onChange={(n) => setInput("fitRate", n)}
-                prefix="$"
+                prefix={currencySymbol}
                 decimals={2}
                 step={0.01}
                 ariaLabel="Feed-in tariff"
@@ -215,17 +237,22 @@ function DirIcon({ orientation, active }: { orientation: Orientation; active: bo
 function Field({
   label,
   hint,
+  tooltip,
   children,
 }: {
   label: string;
   hint?: string;
+  tooltip?: string;
   children: React.ReactNode;
 }) {
   // flex column with input pinned to the bottom — keeps the yellow boxes
   // perfectly aligned across columns even when one hint wraps to two lines.
   return (
     <label className="flex h-full flex-col">
-      <span className="block text-[13px] font-semibold text-ink mb-0.5">{label}</span>
+      <span className="flex items-center text-[13px] font-semibold text-ink mb-0.5">
+        {label}
+        {tooltip && <InfoTooltip text={tooltip} />}
+      </span>
       {hint && <span className="block text-[11.5px] text-ink-muted mb-2">{hint}</span>}
       <div className="mt-auto">{children}</div>
     </label>

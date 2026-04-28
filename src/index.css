@@ -56,3 +56,43 @@
     @apply h-px w-8 bg-line-strong;
   }
 }
+
+/* Print stylesheet — sales reps "Save as PDF" via the browser dialog.
+ * Hide interactive controls, force light backgrounds, prevent awkward page
+ * breaks inside cards/charts, drop shadows so the PDF looks clean. */
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm 12mm;
+  }
+  html, body {
+    background: #ffffff !important;
+  }
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  /* Section dividers visually break the flow on screen but waste vertical
+   * space on paper — hide them. */
+  [class*="SectionDivider"], hr {
+    display: none !important;
+  }
+  /* Stop cards / tables / charts from being split across pages mid-element. */
+  section, .shadow-card, table, .recharts-wrapper {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  /* Drop shadows so the PDF doesn't look noisy. */
+  .shadow-card, .shadow-elev {
+    box-shadow: none !important;
+  }
+  /* Tooltip popovers shouldn't appear in print output. */
+  [role="tooltip"] {
+    display: none !important;
+  }
+  /* Remove the dark hero gradient backgrounds — they print as muddy grey. */
+  .bg-ink {
+    background: #1a1a1a !important;
+  }
+}
+

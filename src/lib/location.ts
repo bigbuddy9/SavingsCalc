@@ -21,6 +21,8 @@ export type LocationResult = {
   state: string;
   hemisphere: Hemisphere;
   peakSunHours: number;
+  /** ISO 4217 currency code, e.g. "AUD", "USD", "GBP", "EUR". */
+  currency: string;
 };
 
 export type CountryEntry = {
@@ -28,6 +30,8 @@ export type CountryEntry = {
   name: string;
   hemisphere: Hemisphere;
   peakSunHours: number;
+  /** ISO 4217 currency code. */
+  currency: string;
   /** If set, this country has detailed postcode→city resolution. */
   postcodeLength?: number;
 };
@@ -38,61 +42,61 @@ export type CountryEntry = {
  */
 export const COUNTRIES: CountryEntry[] = [
   // Oceania
-  { code: "AU", name: "Australia",        hemisphere: "S", peakSunHours: 4.8, postcodeLength: 4 },
-  { code: "NZ", name: "New Zealand",      hemisphere: "S", peakSunHours: 3.9 },
+  { code: "AU", name: "Australia",        hemisphere: "S", peakSunHours: 4.8, currency: "AUD", postcodeLength: 4 },
+  { code: "NZ", name: "New Zealand",      hemisphere: "S", peakSunHours: 3.9, currency: "NZD" },
   // North America
-  { code: "US", name: "United States",    hemisphere: "N", peakSunHours: 4.5, postcodeLength: 5 },
-  { code: "CA", name: "Canada",           hemisphere: "N", peakSunHours: 3.7 },
-  { code: "MX", name: "Mexico",           hemisphere: "N", peakSunHours: 5.2 },
+  { code: "US", name: "United States",    hemisphere: "N", peakSunHours: 4.5, currency: "USD", postcodeLength: 5 },
+  { code: "CA", name: "Canada",           hemisphere: "N", peakSunHours: 3.7, currency: "CAD" },
+  { code: "MX", name: "Mexico",           hemisphere: "N", peakSunHours: 5.2, currency: "MXN" },
   // Europe
-  { code: "GB", name: "United Kingdom",   hemisphere: "N", peakSunHours: 2.8 },
-  { code: "IE", name: "Ireland",          hemisphere: "N", peakSunHours: 2.7 },
-  { code: "FR", name: "France",           hemisphere: "N", peakSunHours: 3.5 },
-  { code: "DE", name: "Germany",          hemisphere: "N", peakSunHours: 2.9 },
-  { code: "ES", name: "Spain",            hemisphere: "N", peakSunHours: 4.9 },
-  { code: "IT", name: "Italy",            hemisphere: "N", peakSunHours: 4.3 },
-  { code: "PT", name: "Portugal",         hemisphere: "N", peakSunHours: 4.8 },
-  { code: "GR", name: "Greece",           hemisphere: "N", peakSunHours: 4.8 },
-  { code: "NL", name: "Netherlands",      hemisphere: "N", peakSunHours: 2.8 },
-  { code: "BE", name: "Belgium",          hemisphere: "N", peakSunHours: 2.8 },
-  { code: "SE", name: "Sweden",           hemisphere: "N", peakSunHours: 2.9 },
-  { code: "NO", name: "Norway",           hemisphere: "N", peakSunHours: 2.6 },
-  { code: "DK", name: "Denmark",          hemisphere: "N", peakSunHours: 2.8 },
-  { code: "FI", name: "Finland",          hemisphere: "N", peakSunHours: 2.7 },
-  { code: "PL", name: "Poland",           hemisphere: "N", peakSunHours: 3.0 },
-  { code: "CH", name: "Switzerland",      hemisphere: "N", peakSunHours: 3.4 },
-  { code: "AT", name: "Austria",          hemisphere: "N", peakSunHours: 3.2 },
-  { code: "CZ", name: "Czechia",          hemisphere: "N", peakSunHours: 3.0 },
-  { code: "TR", name: "Turkey",           hemisphere: "N", peakSunHours: 4.4 },
-  { code: "RU", name: "Russia",           hemisphere: "N", peakSunHours: 3.0 },
-  { code: "UA", name: "Ukraine",          hemisphere: "N", peakSunHours: 3.0 },
+  { code: "GB", name: "United Kingdom",   hemisphere: "N", peakSunHours: 2.8, currency: "GBP" },
+  { code: "IE", name: "Ireland",          hemisphere: "N", peakSunHours: 2.7, currency: "EUR" },
+  { code: "FR", name: "France",           hemisphere: "N", peakSunHours: 3.5, currency: "EUR" },
+  { code: "DE", name: "Germany",          hemisphere: "N", peakSunHours: 2.9, currency: "EUR" },
+  { code: "ES", name: "Spain",            hemisphere: "N", peakSunHours: 4.9, currency: "EUR" },
+  { code: "IT", name: "Italy",            hemisphere: "N", peakSunHours: 4.3, currency: "EUR" },
+  { code: "PT", name: "Portugal",         hemisphere: "N", peakSunHours: 4.8, currency: "EUR" },
+  { code: "GR", name: "Greece",           hemisphere: "N", peakSunHours: 4.8, currency: "EUR" },
+  { code: "NL", name: "Netherlands",      hemisphere: "N", peakSunHours: 2.8, currency: "EUR" },
+  { code: "BE", name: "Belgium",          hemisphere: "N", peakSunHours: 2.8, currency: "EUR" },
+  { code: "SE", name: "Sweden",           hemisphere: "N", peakSunHours: 2.9, currency: "SEK" },
+  { code: "NO", name: "Norway",           hemisphere: "N", peakSunHours: 2.6, currency: "NOK" },
+  { code: "DK", name: "Denmark",          hemisphere: "N", peakSunHours: 2.8, currency: "DKK" },
+  { code: "FI", name: "Finland",          hemisphere: "N", peakSunHours: 2.7, currency: "EUR" },
+  { code: "PL", name: "Poland",           hemisphere: "N", peakSunHours: 3.0, currency: "PLN" },
+  { code: "CH", name: "Switzerland",      hemisphere: "N", peakSunHours: 3.4, currency: "CHF" },
+  { code: "AT", name: "Austria",          hemisphere: "N", peakSunHours: 3.2, currency: "EUR" },
+  { code: "CZ", name: "Czechia",          hemisphere: "N", peakSunHours: 3.0, currency: "CZK" },
+  { code: "TR", name: "Turkey",           hemisphere: "N", peakSunHours: 4.4, currency: "TRY" },
+  { code: "RU", name: "Russia",           hemisphere: "N", peakSunHours: 3.0, currency: "RUB" },
+  { code: "UA", name: "Ukraine",          hemisphere: "N", peakSunHours: 3.0, currency: "UAH" },
   // Asia
-  { code: "JP", name: "Japan",            hemisphere: "N", peakSunHours: 3.6 },
-  { code: "KR", name: "South Korea",      hemisphere: "N", peakSunHours: 3.7 },
-  { code: "CN", name: "China",            hemisphere: "N", peakSunHours: 4.0 },
-  { code: "IN", name: "India",            hemisphere: "N", peakSunHours: 5.5 },
-  { code: "SG", name: "Singapore",        hemisphere: "N", peakSunHours: 4.8 },
-  { code: "MY", name: "Malaysia",         hemisphere: "N", peakSunHours: 4.8 },
-  { code: "TH", name: "Thailand",         hemisphere: "N", peakSunHours: 5.0 },
-  { code: "ID", name: "Indonesia",        hemisphere: "S", peakSunHours: 4.8 },
-  { code: "PH", name: "Philippines",      hemisphere: "N", peakSunHours: 5.1 },
-  { code: "VN", name: "Vietnam",          hemisphere: "N", peakSunHours: 4.7 },
+  { code: "JP", name: "Japan",            hemisphere: "N", peakSunHours: 3.6, currency: "JPY" },
+  { code: "KR", name: "South Korea",      hemisphere: "N", peakSunHours: 3.7, currency: "KRW" },
+  { code: "CN", name: "China",            hemisphere: "N", peakSunHours: 4.0, currency: "CNY" },
+  { code: "IN", name: "India",            hemisphere: "N", peakSunHours: 5.5, currency: "INR" },
+  { code: "SG", name: "Singapore",        hemisphere: "N", peakSunHours: 4.8, currency: "SGD" },
+  { code: "MY", name: "Malaysia",         hemisphere: "N", peakSunHours: 4.8, currency: "MYR" },
+  { code: "TH", name: "Thailand",         hemisphere: "N", peakSunHours: 5.0, currency: "THB" },
+  { code: "ID", name: "Indonesia",        hemisphere: "S", peakSunHours: 4.8, currency: "IDR" },
+  { code: "PH", name: "Philippines",      hemisphere: "N", peakSunHours: 5.1, currency: "PHP" },
+  { code: "VN", name: "Vietnam",          hemisphere: "N", peakSunHours: 4.7, currency: "VND" },
   // Middle East
-  { code: "AE", name: "United Arab Emirates", hemisphere: "N", peakSunHours: 6.0 },
-  { code: "SA", name: "Saudi Arabia",     hemisphere: "N", peakSunHours: 6.5 },
-  { code: "IL", name: "Israel",           hemisphere: "N", peakSunHours: 5.5 },
+  { code: "AE", name: "United Arab Emirates", hemisphere: "N", peakSunHours: 6.0, currency: "AED" },
+  { code: "SA", name: "Saudi Arabia",     hemisphere: "N", peakSunHours: 6.5, currency: "SAR" },
+  { code: "IL", name: "Israel",           hemisphere: "N", peakSunHours: 5.5, currency: "ILS" },
   // Africa
-  { code: "ZA", name: "South Africa",     hemisphere: "S", peakSunHours: 5.5 },
-  { code: "EG", name: "Egypt",            hemisphere: "N", peakSunHours: 6.0 },
-  { code: "MA", name: "Morocco",          hemisphere: "N", peakSunHours: 5.5 },
-  { code: "NG", name: "Nigeria",          hemisphere: "N", peakSunHours: 5.0 },
-  { code: "KE", name: "Kenya",            hemisphere: "S", peakSunHours: 5.5 },
+  { code: "ZA", name: "South Africa",     hemisphere: "S", peakSunHours: 5.5, currency: "ZAR" },
+  { code: "EG", name: "Egypt",            hemisphere: "N", peakSunHours: 6.0, currency: "EGP" },
+  { code: "MA", name: "Morocco",          hemisphere: "N", peakSunHours: 5.5, currency: "MAD" },
+  { code: "NG", name: "Nigeria",          hemisphere: "N", peakSunHours: 5.0, currency: "NGN" },
+  { code: "KE", name: "Kenya",            hemisphere: "S", peakSunHours: 5.5, currency: "KES" },
   // South America
-  { code: "BR", name: "Brazil",           hemisphere: "S", peakSunHours: 5.2 },
-  { code: "AR", name: "Argentina",        hemisphere: "S", peakSunHours: 4.9 },
-  { code: "CL", name: "Chile",            hemisphere: "S", peakSunHours: 5.3 },
-  { code: "CO", name: "Colombia",         hemisphere: "N", peakSunHours: 4.5 },
-  { code: "PE", name: "Peru",             hemisphere: "S", peakSunHours: 5.5 },
+  { code: "BR", name: "Brazil",           hemisphere: "S", peakSunHours: 5.2, currency: "BRL" },
+  { code: "AR", name: "Argentina",        hemisphere: "S", peakSunHours: 4.9, currency: "ARS" },
+  { code: "CL", name: "Chile",            hemisphere: "S", peakSunHours: 5.3, currency: "CLP" },
+  { code: "CO", name: "Colombia",         hemisphere: "N", peakSunHours: 4.5, currency: "COP" },
+  { code: "PE", name: "Peru",             hemisphere: "S", peakSunHours: 5.5, currency: "PEN" },
 ];
 
 const COUNTRY_BY_CODE: Record<string, CountryEntry> = COUNTRIES.reduce(
@@ -248,6 +252,7 @@ export function lookupLocation(country: Country, postcode: string): LocationResu
           state: match.state,
           hemisphere: entry.hemisphere,
           peakSunHours: match.peakSunHours,
+          currency: entry.currency,
         };
       }
     }
@@ -261,6 +266,7 @@ export function lookupLocation(country: Country, postcode: string): LocationResu
     state: "",
     hemisphere: entry.hemisphere,
     peakSunHours: entry.peakSunHours,
+    currency: entry.currency,
   };
 }
 

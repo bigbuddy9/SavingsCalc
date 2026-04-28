@@ -1,26 +1,51 @@
 import { useCalculator } from "@/state/CalculatorContext";
-import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
 const FREQUENCIES: { label: string; divisor: number }[] = [
-  { label: "Monthly",    divisor: 12 },
+  { label: "Monthly",     divisor: 12 },
   { label: "Fortnightly", divisor: 26 },
-  { label: "Weekly",     divisor: 52 },
+  { label: "Weekly",      divisor: 52 },
 ];
 
 /**
- * Resinc-style breakdown: Payment vs Savings at monthly / fortnightly / weekly cadence,
- * with a Net column that turns green when savings cover the payment.
+ * Cadence breakdown of year-1 cashflow.
  *
- * Uses Year-1 figures: payment = annual loan repayment + monthly fees × 12 (+ setup if it
- * weren't a one-off — but we keep the breakdown ongoing-only so the cadence numbers are
- * representative of every year of the loan, not just year 1).
+ *  - With a loan: Payment | Savings | Net (Resinc-style). Net cell turns
+ *    green when savings cover the payment, red when they don't.
+ *  - Cash purchase (loan term = 0): no payment column — just Savings
+ *    at each cadence, since "payment" is misleading when there's no loan.
  */
 export function PaymentBreakdown() {
-  const { cashflow } = useCalculator();
+  const { cashflow, formatMoney } = useCalculator();
   const annualPayment = cashflow.annualPayment;
   const annualSavings = cashflow.years[0]?.savings ?? 0;
+  const hasLoan = cashflow.hasLoan;
 
+  if (!hasLoan) {
+    return (
+      <div className="rounded-2xl border border-line bg-surface shadow-card overflow-hidden">
+        <div className="grid grid-cols-[1fr_minmax(0,1fr)] bg-surface-alt px-6 md:px-8 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-subtle">
+          <span className="text-left">Savings cadence</span>
+          <span className="text-right">Year-1 savings</span>
+        </div>
+        <div className="divide-y divide-line/70">
+          {FREQUENCIES.map(({ label, divisor }) => (
+            <div
+              key={label}
+              className="grid grid-cols-[1fr_minmax(0,1fr)] items-center px-6 md:px-8 py-3.5 text-[15px] num"
+            >
+              <span className="text-ink font-semibold">{label}</span>
+              <span className="text-right text-gain tabular-nums font-semibold">
+                {formatMoney(annualSavings / divisor)}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const zero = formatMoney(0);
   return (
     <div className="rounded-2xl border border-line bg-surface shadow-card overflow-hidden">
       <div className="grid grid-cols-[1fr_repeat(3,minmax(0,1fr))] bg-surface-alt px-6 md:px-8 py-3.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-subtle">
@@ -42,7 +67,7 @@ export function PaymentBreakdown() {
             >
               <span className="text-ink font-semibold">{label}</span>
               <span className="text-right text-ink-soft tabular-nums">
-                {payment > 0 ? `−${formatMoney(payment)}` : "$0"}
+                {payment > 0 ? `−${formatMoney(payment)}` : zero}
               </span>
               <span className="text-right text-gain tabular-nums font-semibold">
                 {formatMoney(savings)}

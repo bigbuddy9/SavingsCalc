@@ -1,5 +1,4 @@
 import { useCalculator } from "@/state/CalculatorContext";
-import { formatMoney } from "@/lib/format";
 
 const MILESTONES = [
   { label: "1st year",  yearIndex: 0  },
@@ -13,7 +12,7 @@ const MILESTONES = [
  * (cumulative savings ÷ upfront investment), not net cashflow.
  */
 export function SavingsROISummary() {
-  const { cashflow, pricing } = useCalculator();
+  const { cashflow, pricing, formatMoney } = useCalculator();
   const investment = Math.max(1, pricing.investment);
 
   return (

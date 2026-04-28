@@ -1,6 +1,5 @@
 import { useCalculator } from "@/state/CalculatorContext";
 import { NumberInput } from "@/components/inputs/NumberInput";
-import { formatMoney } from "@/lib/format";
 import type { CalculatorInputs } from "@/state/CalculatorContext";
 
 export function PricingTable() {
@@ -11,6 +10,8 @@ export function PricingTable() {
     addPriceLineItem,
     removePriceLineItem,
     updatePriceLineItem,
+    formatMoney,
+    currencySymbol,
   } = useCalculator();
 
   return (
@@ -64,7 +65,7 @@ export function PricingTable() {
               <NumberInput
                 value={inputs.discount}
                 onChange={(n) => setInput("discount", n)}
-                prefix="$"
+                prefix={currencySymbol}
                 size="sm"
                 ariaLabel="Discount"
               />
@@ -103,6 +104,7 @@ function EditableRow({
   onAmountChange: (amount: number) => void;
   onRemove: () => void;
 }) {
+  const { currencySymbol } = useCalculator();
   return (
     <div className="group flex items-center gap-3 px-6 md:px-8 py-3">
       <input
@@ -121,7 +123,7 @@ function EditableRow({
         <NumberInput
           value={amount}
           onChange={onAmountChange}
-          prefix="$"
+          prefix={currencySymbol}
           size="sm"
           ariaLabel={`${label || "Line item"} amount`}
         />
@@ -175,7 +177,7 @@ function DeductionRow({
   countKey: keyof CalculatorInputs;
   priceKey: keyof CalculatorInputs;
 }) {
-  const { inputs, setInput } = useCalculator();
+  const { inputs, setInput, formatMoney, currencySymbol } = useCalculator();
   return (
     <div className="px-6 md:px-8 py-4 flex flex-wrap items-center justify-between gap-3">
       <div className="flex flex-col">
@@ -190,7 +192,7 @@ function DeductionRow({
           <Mini
             value={inputs[priceKey] as number}
             onChange={(n) => setInput(priceKey, n as never)}
-            prefix="$"
+            prefix={currencySymbol}
             ariaLabel={`${label} unit price`}
           />
         </span>

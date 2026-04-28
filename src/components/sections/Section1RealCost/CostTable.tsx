@@ -1,7 +1,8 @@
-import { formatMoney } from "@/lib/format";
+import { useCalculator } from "@/state/CalculatorContext";
 import type { CostYearRow } from "@/hooks/useRealCostCalc";
 
 export function CostTable({ years }: { years: CostYearRow[] }) {
+  const { formatMoney } = useCalculator();
   const first10 = years.slice(0, 10);
   return (
     <div className="overflow-hidden rounded-xl border border-line bg-surface shadow-card">

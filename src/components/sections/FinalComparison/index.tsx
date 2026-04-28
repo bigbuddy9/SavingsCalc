@@ -1,9 +1,8 @@
 import { useCalculator } from "@/state/CalculatorContext";
 import { theme } from "@/config/theme";
-import { formatMoneyK, formatMoneyKUnsigned } from "@/lib/format";
 
 export function FinalComparison() {
-  const { realCost, cashflow } = useCalculator();
+  const { realCost, cashflow, formatMoneyK, formatMoneyKUnsigned } = useCalculator();
   const copy = theme.copy.final;
 
   const without = -realCost.twentyFiveYearPower;

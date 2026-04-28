@@ -1,12 +1,12 @@
 import { useCalculator } from "@/state/CalculatorContext";
-import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import type { CashflowYearRow } from "@/hooks/useCashflowCalc";
 
 export function CashflowTable({ years }: { years: CashflowYearRow[] }) {
-  const { pricing } = useCalculator();
+  const { pricing, formatMoney } = useCalculator();
   const investment = Math.max(1, pricing.investment);
   const rows = years.slice(0, 15);
+  const zero = formatMoney(0);
 
   return (
     <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
@@ -42,7 +42,7 @@ export function CashflowTable({ years }: { years: CashflowYearRow[] }) {
                     />
                     Year {y.year}
                   </td>
-                  <Td>{y.payment > 0 ? `−${formatMoney(y.payment)}` : "$0"}</Td>
+                  <Td>{y.payment > 0 ? `−${formatMoney(y.payment)}` : zero}</Td>
                   <Td>{formatMoney(y.savings)}</Td>
                   <Td className={cn("font-semibold", netPositive ? "text-gain" : "text-pain")}>
                     {netPositive ? formatMoney(y.netAnnual) : `−${formatMoney(Math.abs(y.netAnnual))}`}

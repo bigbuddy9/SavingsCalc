@@ -1,4 +1,4 @@
-import { formatMoney } from "@/lib/format";
+import { useCalculator } from "@/state/CalculatorContext";
 
 type Props = {
   tenYearPower: number;
@@ -17,6 +17,7 @@ export function SummaryGrid({
   twentyFiveYearPower,
   twentyFiveYearEarnings,
 }: Props) {
+  const { formatMoney } = useCalculator();
   const rows: { years: number; power: number; earnings: number }[] = [
     { years: 10, power: tenYearPower, earnings: tenYearEarnings },
     { years: 15, power: fifteenYearPower, earnings: fifteenYearEarnings },

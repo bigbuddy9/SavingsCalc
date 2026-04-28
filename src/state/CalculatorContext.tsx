@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRealCostCalc, type RealCostResult } from "@/hooks/useRealCostCalc";
 import { useSystemCalc, type SystemResult } from "@/hooks/useSystemCalc";
 import {
@@ -8,6 +8,13 @@ import {
   type PricingResult,
 } from "@/hooks/usePricingCalc";
 import { useCashflowCalc, type CashflowResult } from "@/hooks/useCashflowCalc";
+import {
+  formatMoney as fmtMoney,
+  formatMoneyK as fmtMoneyK,
+  formatMoneyKUnsigned as fmtMoneyKUnsigned,
+  currencySymbol as fmtCurrencySymbol,
+} from "@/lib/format";
+import { readInputsFromUrl, writeInputsToUrl } from "./urlSync";
 import {
   ORIENTATIONS,
   type Orientation,
@@ -23,6 +30,9 @@ import {
 } from "@/lib/location";
 
 export type CalculatorInputs = {
+  // Top-level
+  customerName: string;
+
   // Section 1
   annualBill: number;
   taxRate: number;
@@ -70,6 +80,7 @@ const DEFAULT_TILTS: OrientationTilt = ORIENTATIONS.reduce((acc, o) => {
 }, {} as OrientationTilt);
 
 const DEFAULTS: CalculatorInputs = {
+  customerName: "",
   annualBill: 0,
   taxRate: 30,
 
@@ -124,12 +135,30 @@ export type CalculatorContextValue = {
   system: SystemResult;
   pricing: PricingResult;
   cashflow: CashflowResult;
+  /** Currency-aware formatters bound to location.currency. */
+  formatMoney: (n: number, opts?: { withSign?: boolean }) => string;
+  formatMoneyK: (n: number) => string;
+  formatMoneyKUnsigned: (n: number) => string;
+  /** Just the currency symbol (e.g. "£"). For input prefixes. */
+  currencySymbol: string;
 };
 
 const Ctx = createContext<CalculatorContextValue | null>(null);
 
 export function CalculatorProvider({ children }: { children: ReactNode }) {
-  const [inputs, setInputs] = useState<CalculatorInputs>(DEFAULTS);
+  // Restore from #hash on first paint — gives the sales rep a shareable link.
+  // Defaults fill any missing fields so older links keep working as the input
+  // shape evolves.
+  const [inputs, setInputs] = useState<CalculatorInputs>(() => {
+    const fromUrl = readInputsFromUrl();
+    return fromUrl ? { ...DEFAULTS, ...fromUrl } : DEFAULTS;
+  });
+
+  // Mirror inputs back into the hash on every change — replaceState avoids
+  // adding history entries.
+  useEffect(() => {
+    writeInputsToUrl(inputs);
+  }, [inputs]);
 
   const setInput = <K extends keyof CalculatorInputs>(key: K, value: CalculatorInputs[K]) => {
     setInputs((prev) => ({ ...prev, [key]: value }));
@@ -195,9 +224,22 @@ export function CalculatorProvider({ children }: { children: ReactNode }) {
         state: "",
         hemisphere: FALLBACK_HEMISPHERE,
         peakSunHours: FALLBACK_PEAK_SUN_HOURS,
+        currency: "AUD",
       },
     [inputs.country, inputs.postcode]
   );
+
+  const currency = location.currency;
+  const formatMoney = useMemo(
+    () => (n: number, opts?: { withSign?: boolean }) => fmtMoney(n, currency, opts),
+    [currency]
+  );
+  const formatMoneyK = useMemo(() => (n: number) => fmtMoneyK(n, currency), [currency]);
+  const formatMoneyKUnsigned = useMemo(
+    () => (n: number) => fmtMoneyKUnsigned(n, currency),
+    [currency]
+  );
+  const currencySymbol = useMemo(() => fmtCurrencySymbol(currency), [currency]);
 
   const realCost = useRealCostCalc(inputs.annualBill, inputs.taxRate);
 
@@ -261,8 +303,12 @@ export function CalculatorProvider({ children }: { children: ReactNode }) {
       system,
       pricing,
       cashflow,
+      formatMoney,
+      formatMoneyK,
+      formatMoneyKUnsigned,
+      currencySymbol,
     }),
-    [inputs, location, realCost, system, pricing, cashflow]
+    [inputs, location, realCost, system, pricing, cashflow, formatMoney, formatMoneyK, formatMoneyKUnsigned, currencySymbol]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
