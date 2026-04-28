@@ -9,7 +9,7 @@ import {
 } from "@/lib/location";
 
 export function LocationPicker() {
-  const { inputs, setInput, setCountry, location } = useCalculator();
+  const { inputs, setInput, setCountry } = useCalculator();
   const { country, postcode } = inputs;
 
   const entry = getCountryByCode(country);
