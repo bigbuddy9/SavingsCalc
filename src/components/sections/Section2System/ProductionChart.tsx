@@ -11,49 +11,25 @@ import {
 } from "recharts";
 import type { SystemMonthRow } from "@/hooks/useSystemCalc";
 
-const COVERED_FILL = "#059669";   // gain-DEFAULT — flat green for months solar covers
-const UNCOVERED_FILL = "#EAB308"; // matches USAGE_LINE — months that fall short read as "the yellow line you can't reach"
-const USAGE_LINE = "#EAB308";     // yellow-500
+const COVERED_FILL = "#059669";   // gain — flat green for months solar covers
+const UNCOVERED_FILL = "#EAB308"; // yellow — months that fall short of usage
+const USAGE_LINE = "#0A0A0A";     // ink — solid charcoal so it stays visible over both green and yellow bars
 
-export function ProductionChart({
-  data,
-  cashflowPositiveDay1 = false,
-}: {
-  data: SystemMonthRow[];
-  cashflowPositiveDay1?: boolean;
-}) {
+export function ProductionChart({ data }: { data: SystemMonthRow[] }) {
   const fullyCovered = data.length > 0 && data.every((m) => m.production >= m.usage);
   const shortMonths = data.filter((m) => m.production < m.usage).length;
 
-  // Three banner states (in priority order):
-  //   1. fully covered + cashflow positive day 1 → "$0 out of pocket"
-  //   2. fully covered only                       → "covered every month"
-  //   3. partial coverage                         → "X months fall short"
-  let banner: React.ReactNode;
-  if (fullyCovered && cashflowPositiveDay1) {
-    banner = <CoverageBanner tone="day1" />;
-  } else if (fullyCovered) {
-    banner = <CoverageBanner tone="full" />;
-  } else {
-    banner = <CoverageBanner tone="partial" shortMonths={shortMonths} />;
-  }
-
   return (
     <div className="rounded-2xl border border-line bg-surface p-5 md:p-7 shadow-card">
-      {banner}
+      {fullyCovered ? (
+        <CoverageBanner tone="full" />
+      ) : (
+        <CoverageBanner tone="partial" shortMonths={shortMonths} />
+      )}
 
       <div className="h-[360px] w-full">
         <ResponsiveContainer>
           <ComposedChart data={data} margin={{ top: 16, right: 16, bottom: 8, left: 0 }}>
-            <defs>
-              <filter id="usageGlow" x="-30%" y="-50%" width="160%" height="200%">
-                <feGaussianBlur stdDeviation="3" result="blur" />
-                <feMerge>
-                  <feMergeNode in="blur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-            </defs>
             <CartesianGrid stroke="#F1F0EE" vertical={false} />
             <XAxis
               dataKey="month"
@@ -105,15 +81,17 @@ export function ProductionChart({
                 />
               ))}
             </Bar>
+            {/* Usage line: always solid charcoal, always visible — sits on top of
+                both green and yellow bars regardless of whether production has
+                cleared it. No conditional dash/glow tricks; just a clear reference. */}
             <Line
               type="linear"
               dataKey="usage"
               name="Your daily usage"
               stroke={USAGE_LINE}
-              strokeWidth={fullyCovered ? 4 : 3.25}
-              strokeDasharray={fullyCovered ? undefined : "7 5"}
+              strokeWidth={2.5}
+              strokeDasharray="6 5"
               strokeLinecap="round"
-              filter={fullyCovered ? "url(#usageGlow)" : undefined}
               dot={false}
               isAnimationActive
               animationDuration={900}
@@ -125,7 +103,7 @@ export function ProductionChart({
       <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px] text-ink-muted">
         <Legend swatchColor={COVERED_FILL} label="Covers your usage" />
         <Legend swatchColor={UNCOVERED_FILL} label="Falls short" />
-        <Legend lineColor={USAGE_LINE} dashed={!fullyCovered} label="Your daily usage" />
+        <Legend lineColor={USAGE_LINE} dashed label="Your daily usage" />
       </div>
     </div>
   );
@@ -135,21 +113,9 @@ function CoverageBanner({
   tone,
   shortMonths,
 }: {
-  tone: "full" | "partial" | "day1";
+  tone: "full" | "partial";
   shortMonths?: number;
 }) {
-  if (tone === "day1") {
-    return (
-      <div className="mb-4 rounded-lg bg-gain/[0.06] border border-gain/25 px-4 py-2.5">
-        <div className="flex items-center gap-2.5">
-          <span className="inline-block h-2 w-2 rounded-full bg-gain" />
-          <span className="text-[13.5px] text-ink-soft">
-            Solar covers your usage every month, and year-1 savings exceed year-1 loan payments.
-          </span>
-        </div>
-      </div>
-    );
-  }
   if (tone === "full") {
     return (
       <div className="mb-4 flex items-center gap-2.5 rounded-lg bg-gain/10 border border-gain/30 px-4 py-2.5">
