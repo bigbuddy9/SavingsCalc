@@ -26,8 +26,11 @@ export function CashflowTable({ years }: { years: CashflowYearRow[] }) {
             {rows.map((y) => {
               const netPositive = y.netAnnual >= 0;
               const cumPositive = y.cumNet >= 0;
-              const roi = (y.cumNet / investment) * 100;
-              const roiText = `${roi >= 0 ? "" : "−"}${Math.abs(roi).toFixed(1)}%`;
+              // ROI = annual savings / upfront investment. Always positive
+              // (savings can't go negative); represents the year's return on
+              // the upfront cost, independent of whether the loan repayments
+              // are still chewing through the cashflow.
+              const roi = (y.savings / investment) * 100;
 
               // Subtle row tint that follows the cumulative net — gives the
               // table a top-to-bottom red→green flow as years roll over.
@@ -60,9 +63,7 @@ export function CashflowTable({ years }: { years: CashflowYearRow[] }) {
                   <Td className={cn("italic font-semibold", cumPositive ? "text-gain" : "text-pain")}>
                     {cumPositive ? formatMoney(y.cumNet) : `−${formatMoney(Math.abs(y.cumNet))}`}
                   </Td>
-                  <Td className={cn("font-semibold", roi >= 0 ? "text-gain" : "text-pain")}>
-                    {roiText}
-                  </Td>
+                  <Td className="font-semibold text-gain">{roi.toFixed(1)}%</Td>
                 </tr>
               );
             })}

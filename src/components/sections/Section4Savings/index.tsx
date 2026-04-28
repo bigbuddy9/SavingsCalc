@@ -6,6 +6,7 @@ import { PaymentBreakdown } from "./PaymentBreakdown";
 import { CashflowTable } from "./CashflowTable";
 import { SavingsChart } from "./SavingsChart";
 import { BreakEvenStat } from "./BreakEvenStat";
+import { SavingsROISummary } from "./SavingsROISummary";
 
 export function Section4Savings() {
   const { cashflow } = useCalculator();
@@ -25,6 +26,10 @@ export function Section4Savings() {
       />
 
       <div className="mt-10">
+        <SavingsROISummary />
+      </div>
+
+      <div className="mt-6">
         <LoanInputs />
       </div>
 
@@ -40,8 +45,8 @@ export function Section4Savings() {
               className="inline-block h-2 w-2 rounded-full bg-gain"
             />
             <p className="text-[14px] text-ink-soft">
-              Year-1 projected savings exceed year-1 loan repayments and fees.
-              Net cashflow is positive from year one.
+              <span className="font-semibold text-gain-ink">From year one, net cashflow is positive.</span>{" "}
+              Projected savings cover every loan repayment and fee — this system costs $0 out of pocket.
             </p>
           </div>
         </div>
