@@ -37,16 +37,27 @@ export function Section4Savings() {
         <PaymentBreakdown />
       </div>
 
-      {day1 && (
+      {cashflow.hasLoan && day1 && (
         <div className="mt-6 rounded-2xl border border-gain/25 bg-gain/[0.06] px-6 md:px-8 py-4">
           <div className="flex items-center gap-3">
-            <span
-              aria-hidden
-              className="inline-block h-2 w-2 rounded-full bg-gain"
-            />
+            <span aria-hidden className="inline-block h-2 w-2 rounded-full bg-gain" />
             <p className="text-[14px] text-ink-soft">
               <span className="font-semibold text-gain-ink">From year one, net cashflow is positive.</span>{" "}
               Projected savings cover every loan repayment and fee — this system costs $0 out of pocket.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {!cashflow.hasLoan && cashflow.paybackYear && (
+        <div className="mt-6 rounded-2xl border border-gain/25 bg-gain/[0.06] px-6 md:px-8 py-4">
+          <div className="flex items-center gap-3">
+            <span aria-hidden className="inline-block h-2 w-2 rounded-full bg-gain" />
+            <p className="text-[14px] text-ink-soft">
+              <span className="font-semibold text-gain-ink">
+                Payback in Year {cashflow.paybackYear}.
+              </span>{" "}
+              That's when cumulative solar savings exceed the upfront cost. Every year after is pure return.
             </p>
           </div>
         </div>
@@ -68,7 +79,11 @@ export function Section4Savings() {
       </div>
 
       <div className="mt-12">
-        <BreakEvenStat breakEvenYear={cashflow.breakEvenYear} />
+        <BreakEvenStat
+          paybackYear={cashflow.paybackYear}
+          breakEvenYear={cashflow.breakEvenYear}
+          hasLoan={cashflow.hasLoan}
+        />
       </div>
     </section>
   );

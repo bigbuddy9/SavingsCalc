@@ -18,12 +18,20 @@ export type CashflowResult = {
   annualPayment: number;
   loanPrincipal: number;
   years: CashflowYearRow[];
+  /** First year where annual savings exceed annual payments + fees. */
   breakEvenYear: number | null;
+  /** First year where cumulative savings catch up to the upfront investment.
+   *  More meaningful than breakEvenYear for cash purchases (where breakEvenYear
+   *  is always 1) — represents the actual payback period.
+   */
+  paybackYear: number | null;
   totalCumNet: number;
   cumSavings25: number;
   cumPayments25: number;
   /** True when year-1 savings >= year-1 payment (incl. setup + monthly fees). */
   cashflowPositiveDay1: boolean;
+  /** Convenience: did the user pick a finance term, or is this a cash purchase? */
+  hasLoan: boolean;
 };
 
 export function calculateLoanPayment(principal: number, annualRatePercent: number, years: number): number {
@@ -61,12 +69,10 @@ export function useCashflowCalc(
     let cumPayments = 0;
     let cumSavings = 0;
     let breakEvenYear: number | null = null;
+    let paybackYear: number | null = null;
 
     const hasLoan = term > 0;
     for (let year = 1; year <= 25; year++) {
-      // During the loan term: amortized repayment + monthly fees × 12.
-      // Setup fee tacks onto year 1 only.
-      // No loan → no repayments and no loan-related fees apply.
       const inLoanTerm = hasLoan && year <= term;
       const payment =
         (inLoanTerm ? annualPayment : 0) + (hasLoan && year === 1 ? Math.max(0, setupFee) : 0);
@@ -76,6 +82,7 @@ export function useCashflowCalc(
       const netAnnual = savings - payment;
       const cumNet = cumSavings - cumPayments;
       if (breakEvenYear === null && netAnnual > 0) breakEvenYear = year;
+      if (paybackYear === null && cumSavings >= investment) paybackYear = year;
       years.push({ year, payment, savings, netAnnual, cumPayments, cumSavings, cumNet });
     }
 
@@ -87,10 +94,12 @@ export function useCashflowCalc(
       loanPrincipal,
       years,
       breakEvenYear,
+      paybackYear,
       totalCumNet: years[24].cumNet,
       cumSavings25: years[24].cumSavings,
       cumPayments25: years[24].cumPayments,
       cashflowPositiveDay1,
+      hasLoan,
     };
   }, [investment, yr1Savings, loanTermYears, interestRatePercent, deposit, setupFee, monthlyFee]);
 }

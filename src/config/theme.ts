@@ -35,7 +35,7 @@ export const theme = {
       eyebrow: "Section 04 · Your 25-year savings vs repayments",
       title: "Your 25-year savings story.",
       intro:
-        "This is the real picture: your loan repayments versus the savings you'll make on your power bill, every year for the next 25 years.",
+        "Year by year — what you save, what you pay, and what's net in your pocket across the full 25 years.",
       chartTitle: "25-year cumulative savings vs repayments",
       chartSubtitle:
         "Orange = your total solar savings. Green = your loan repayments. Once the loan is paid off, savings keep growing — for free.",
