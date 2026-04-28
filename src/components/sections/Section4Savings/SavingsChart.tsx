@@ -11,11 +11,18 @@ import { useCalculator } from "@/state/CalculatorContext";
 import type { CashflowYearRow } from "@/hooks/useCashflowCalc";
 
 export function SavingsChart({ years }: { years: CashflowYearRow[] }) {
-  const { formatMoney } = useCalculator();
+  const { formatMoney, inputs, cashflow } = useCalculator();
+  const loanTerm = cashflow.hasLoan ? Math.floor(inputs.loanTerm) : 0;
+
+  // Stop the green payments area at the end of the loan term — once the loan
+  // is paid off, the area would otherwise sit flat across the rest of the
+  // chart, which is misleading (suggests ongoing repayments) and visually
+  // noisy. Setting payments to null past loanTerm makes Recharts not render
+  // the area beyond that x-coord.
   const data = years.map((y) => ({
     year: y.year,
     savings: Math.round(y.cumSavings),
-    payments: Math.round(y.cumPayments),
+    payments: loanTerm > 0 && y.year <= loanTerm ? Math.round(y.cumPayments) : null,
   }));
 
   return (
@@ -88,6 +95,7 @@ export function SavingsChart({ years }: { years: CashflowYearRow[] }) {
               stroke="#059669"
               strokeWidth={2.5}
               fill="url(#paymentsFill)"
+              connectNulls={false}
               isAnimationActive
               animationDuration={900}
             />

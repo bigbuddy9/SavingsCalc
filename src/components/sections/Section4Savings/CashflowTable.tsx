@@ -24,9 +24,16 @@ export function CashflowTable({ years }: { years: CashflowYearRow[] }) {
           <tbody>
             {rows.map((y) => {
               const netPositive = y.netAnnual >= 0;
-              const cumPositive = y.cumNet >= 0;
+              // ROI = annual savings / upfront investment. Always positive
+              // (savings can't go negative); represents the year's return on
+              // the upfront cost, independent of whether the loan repayments
+              // are still chewing through the cashflow.
               const roi = (y.savings / investment) * 100;
-              const rowTint = cumPositive
+
+              // Tint follows the year's net cashflow — the same number the
+              // user is reading in the Net Cashflow column. Cumulative state
+              // is shown elsewhere; the row should match what's in the row.
+              const rowTint = netPositive
                 ? "bg-gain/[0.04] hover:bg-gain/[0.08]"
                 : "bg-pain/[0.03] hover:bg-pain/[0.06]";
 
@@ -37,7 +44,7 @@ export function CashflowTable({ years }: { years: CashflowYearRow[] }) {
                       aria-hidden
                       className={cn(
                         "absolute left-0 top-2 bottom-2 w-[3px] rounded-r-sm",
-                        cumPositive ? "bg-gain" : "bg-pain"
+                        netPositive ? "bg-gain" : "bg-pain"
                       )}
                     />
                     Year {y.year}
