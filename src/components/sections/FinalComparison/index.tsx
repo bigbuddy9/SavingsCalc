@@ -7,8 +7,11 @@ export function FinalComparison() {
   const copy = theme.copy.final;
 
   const without = -realCost.twentyFiveYearPower;
-  const withSolar = cashflow.totalCumNet;
-  const swing = withSolar - without;
+  // With solar, you still pay residual bills + loan payments; cashflow.totalCumNet
+  // is (savings − payments), which is the *delta* the solar system creates against
+  // the no-solar baseline. So: with = without + delta.
+  const withSolar = without + cashflow.totalCumNet;
+  const swing = cashflow.totalCumNet;
 
   return (
     <section className="container-narrow">

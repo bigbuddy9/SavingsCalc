@@ -47,7 +47,10 @@ export function useCashflowCalc(
   monthlyFee: number = 0
 ): CashflowResult {
   return useMemo(() => {
-    const term = Number.isFinite(loanTermYears) && loanTermYears > 0 ? Math.floor(loanTermYears) : 10;
+    // term=0 (or unset) is a valid "cash purchase, no loan" state — keep it
+    // at 0 instead of silently falling back to 10. With term=0,
+    // calculateLoanPayment returns 0 and no year falls in the loan window.
+    const term = Number.isFinite(loanTermYears) && loanTermYears > 0 ? Math.floor(loanTermYears) : 0;
     const safeDeposit = Math.max(0, deposit);
     const loanPrincipal = Math.max(0, investment - safeDeposit);
     const annualLoanPayment = calculateLoanPayment(loanPrincipal, interestRatePercent, term);
@@ -59,12 +62,14 @@ export function useCashflowCalc(
     let cumSavings = 0;
     let breakEvenYear: number | null = null;
 
+    const hasLoan = term > 0;
     for (let year = 1; year <= 25; year++) {
       // During the loan term: amortized repayment + monthly fees × 12.
       // Setup fee tacks onto year 1 only.
-      const inLoanTerm = year <= term;
+      // No loan → no repayments and no loan-related fees apply.
+      const inLoanTerm = hasLoan && year <= term;
       const payment =
-        (inLoanTerm ? annualPayment : 0) + (year === 1 ? Math.max(0, setupFee) : 0);
+        (inLoanTerm ? annualPayment : 0) + (hasLoan && year === 1 ? Math.max(0, setupFee) : 0);
       const savings = yr1Savings * Math.pow(1 + PRICE_INCREASE, year - 1);
       cumPayments += payment;
       cumSavings += savings;
