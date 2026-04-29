@@ -52,18 +52,34 @@ export function useCashflowCalc(
   interestRatePercent: number,
   deposit: number = 0,
   setupFee: number = 0,
-  monthlyFee: number = 0
+  monthlyFee: number = 0,
+  panelDegradationPct: number = 0
 ): CashflowResult {
   return useMemo(() => {
     // term=0 (or unset) is a valid "cash purchase, no loan" state — keep it
     // at 0 instead of silently falling back to 10. With term=0,
     // calculateLoanPayment returns 0 and no year falls in the loan window.
     const term = Number.isFinite(loanTermYears) && loanTermYears > 0 ? Math.floor(loanTermYears) : 0;
+    const hasLoan = term > 0;
     const safeDeposit = Math.max(0, deposit);
-    const loanPrincipal = Math.max(0, investment - safeDeposit);
+    const safeSetupFee = Math.max(0, setupFee);
+    // Setup fee gets rolled into the loan principal (Resinc convention) so it
+    // amortises across the term instead of slamming year 1 with a one-off
+    // charge. Cash purchase: setup fee is ignored — it only makes sense as a
+    // loan establishment cost.
+    const loanPrincipal = hasLoan
+      ? Math.max(0, investment - safeDeposit + safeSetupFee)
+      : 0;
     const annualLoanPayment = calculateLoanPayment(loanPrincipal, interestRatePercent, term);
     const annualMonthlyFees = Math.max(0, monthlyFee) * 12;
     const annualPayment = annualLoanPayment + annualMonthlyFees;
+
+    // Effective year-on-year savings growth = electricity inflation × panel
+    // output retention. Resinc-style: 8% inflation × ~0.991 retention ≈ 7%/yr.
+    // panelDegradationPct is a small percent (e.g. 0.9 means 0.9%/yr); cap at
+    // 10% to prevent ridiculous inputs.
+    const safeDegradation = Math.max(0, Math.min(10, panelDegradationPct)) / 100;
+    const yearMultiplier = (1 + PRICE_INCREASE) * (1 - safeDegradation);
 
     const years: CashflowYearRow[] = [];
     let cumPayments = 0;
@@ -71,12 +87,10 @@ export function useCashflowCalc(
     let breakEvenYear: number | null = null;
     let paybackYear: number | null = null;
 
-    const hasLoan = term > 0;
     for (let year = 1; year <= 25; year++) {
       const inLoanTerm = hasLoan && year <= term;
-      const payment =
-        (inLoanTerm ? annualPayment : 0) + (hasLoan && year === 1 ? Math.max(0, setupFee) : 0);
-      const savings = yr1Savings * Math.pow(1 + PRICE_INCREASE, year - 1);
+      const payment = inLoanTerm ? annualPayment : 0;
+      const savings = yr1Savings * Math.pow(yearMultiplier, year - 1);
       cumPayments += payment;
       cumSavings += savings;
       const netAnnual = savings - payment;
@@ -101,5 +115,5 @@ export function useCashflowCalc(
       cashflowPositiveDay1,
       hasLoan,
     };
-  }, [investment, yr1Savings, loanTermYears, interestRatePercent, deposit, setupFee, monthlyFee]);
+  }, [investment, yr1Savings, loanTermYears, interestRatePercent, deposit, setupFee, monthlyFee, panelDegradationPct]);
 }

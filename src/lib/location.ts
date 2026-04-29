@@ -42,7 +42,7 @@ export type CountryEntry = {
  */
 export const COUNTRIES: CountryEntry[] = [
   // Oceania
-  { code: "AU", name: "Australia",        hemisphere: "S", peakSunHours: 4.8, currency: "AUD", postcodeLength: 4 },
+  { code: "AU", name: "Australia",        hemisphere: "S", peakSunHours: 5.0, currency: "AUD", postcodeLength: 4 },
   { code: "NZ", name: "New Zealand",      hemisphere: "S", peakSunHours: 3.9, currency: "NZD" },
   // North America
   { code: "US", name: "United States",    hemisphere: "N", peakSunHours: 4.5, currency: "USD", postcodeLength: 5 },
@@ -127,13 +127,13 @@ type Range = {
 
 const AU_RANGES: Range[] = [
   { min: 800,  max: 899,  city: "Darwin",    state: "NT",  peakSunHours: 5.8 },
-  { min: 1000, max: 2599, city: "Sydney",    state: "NSW", peakSunHours: 4.8 },
-  { min: 2600, max: 2618, city: "Canberra",  state: "ACT", peakSunHours: 4.7 },
-  { min: 2619, max: 2899, city: "Sydney",    state: "NSW", peakSunHours: 4.8 },
-  { min: 2900, max: 2920, city: "Canberra",  state: "ACT", peakSunHours: 4.7 },
-  { min: 2921, max: 2999, city: "Sydney",    state: "NSW", peakSunHours: 4.8 },
-  { min: 3000, max: 3999, city: "Melbourne", state: "VIC", peakSunHours: 4.2 },
-  { min: 8000, max: 8999, city: "Melbourne", state: "VIC", peakSunHours: 4.2 },
+  { min: 1000, max: 2599, city: "Sydney",    state: "NSW", peakSunHours: 5.1 },
+  { min: 2600, max: 2618, city: "Canberra",  state: "ACT", peakSunHours: 4.9 },
+  { min: 2619, max: 2899, city: "Sydney",    state: "NSW", peakSunHours: 5.1 },
+  { min: 2900, max: 2920, city: "Canberra",  state: "ACT", peakSunHours: 4.9 },
+  { min: 2921, max: 2999, city: "Sydney",    state: "NSW", peakSunHours: 5.1 },
+  { min: 3000, max: 3999, city: "Melbourne", state: "VIC", peakSunHours: 4.5 },
+  { min: 8000, max: 8999, city: "Melbourne", state: "VIC", peakSunHours: 4.5 },
   { min: 4000, max: 4207, city: "Brisbane",  state: "QLD", peakSunHours: 5.1 },
   { min: 4208, max: 4299, city: "Gold Coast",state: "QLD", peakSunHours: 5.0 },
   { min: 4300, max: 4499, city: "Brisbane",  state: "QLD", peakSunHours: 5.1 },
@@ -142,10 +142,10 @@ const AU_RANGES: Range[] = [
   { min: 4806, max: 4830, city: "Townsville", state: "QLD", peakSunHours: 5.7 },
   { min: 4831, max: 4895, city: "Cairns",    state: "QLD", peakSunHours: 5.6 },
   { min: 9000, max: 9999, city: "Brisbane",  state: "QLD", peakSunHours: 5.1 },
-  { min: 5000, max: 5999, city: "Adelaide",  state: "SA",  peakSunHours: 4.8 },
+  { min: 5000, max: 5999, city: "Adelaide",  state: "SA",  peakSunHours: 5.0 },
   { min: 6000, max: 6797, city: "Perth",     state: "WA",  peakSunHours: 5.4 },
   { min: 6798, max: 6799, city: "Christmas Island", state: "WA", peakSunHours: 5.6 },
-  { min: 7000, max: 7999, city: "Hobart",    state: "TAS", peakSunHours: 3.9 },
+  { min: 7000, max: 7999, city: "Hobart",    state: "TAS", peakSunHours: 4.0 },
 ];
 
 const US_RANGES: Range[] = [
