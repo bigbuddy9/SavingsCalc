@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { PRICE_INCREASE } from "@/lib/constants";
+import { PANEL_DEGRADATION, PRICE_INCREASE } from "@/lib/constants";
 
 export type CashflowYearRow = {
   year: number;
@@ -52,8 +52,7 @@ export function useCashflowCalc(
   interestRatePercent: number,
   deposit: number = 0,
   setupFee: number = 0,
-  monthlyFee: number = 0,
-  panelDegradationPct: number = 0
+  monthlyFee: number = 0
 ): CashflowResult {
   return useMemo(() => {
     // term=0 (or unset) is a valid "cash purchase, no loan" state — keep it
@@ -76,10 +75,8 @@ export function useCashflowCalc(
 
     // Effective year-on-year savings growth = electricity inflation × panel
     // output retention. Resinc-style: 8% inflation × ~0.991 retention ≈ 7%/yr.
-    // panelDegradationPct is a small percent (e.g. 0.9 means 0.9%/yr); cap at
-    // 10% to prevent ridiculous inputs.
-    const safeDegradation = Math.max(0, Math.min(10, panelDegradationPct)) / 100;
-    const yearMultiplier = (1 + PRICE_INCREASE) * (1 - safeDegradation);
+    // Degradation is a hidden constant — see lib/constants.ts.
+    const yearMultiplier = (1 + PRICE_INCREASE) * (1 - PANEL_DEGRADATION);
 
     const years: CashflowYearRow[] = [];
     let cumPayments = 0;
@@ -115,5 +112,5 @@ export function useCashflowCalc(
       cashflowPositiveDay1,
       hasLoan,
     };
-  }, [investment, yr1Savings, loanTermYears, interestRatePercent, deposit, setupFee, monthlyFee, panelDegradationPct]);
+  }, [investment, yr1Savings, loanTermYears, interestRatePercent, deposit, setupFee, monthlyFee]);
 }

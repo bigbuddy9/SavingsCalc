@@ -76,20 +76,6 @@ export function LoanInputs() {
             ariaLabel="Interest rate"
           />
         </Field>
-        <Field
-          label="Panel degradation"
-          hint="Annual output loss (industry standard ~0.5–1.0%/yr)."
-          tooltip="Solar panels lose a small amount of output each year. Tier-1 panels typically degrade 0.5–1.0%/yr; 0.9% matches Resinc's modelling. Set to 0 for an optimistic projection that ignores degradation."
-        >
-          <NumberInput
-            value={inputs.panelDegradationPct}
-            onChange={(n) => setInput("panelDegradationPct", Math.max(0, Math.min(10, n)))}
-            suffix="%"
-            decimals={2}
-            step={0.1}
-            ariaLabel="Panel degradation per year"
-          />
-        </Field>
       </div>
     </div>
   );

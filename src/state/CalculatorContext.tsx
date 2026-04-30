@@ -67,8 +67,6 @@ export type CalculatorInputs = {
   deposit: number;
   setupFee: number;
   monthlyFee: number;
-  /** Annual panel output degradation (%/yr). Industry standard ~0.5–1.0%. */
-  panelDegradationPct: number;
 };
 
 const ZERO_PANELS: OrientationPanelCount = ORIENTATIONS.reduce((acc, o) => {
@@ -120,7 +118,6 @@ const DEFAULTS: CalculatorInputs = {
   deposit: 0,
   setupFee: 0,
   monthlyFee: 0,
-  panelDegradationPct: 0.9,
 };
 
 export type CalculatorContextValue = {
@@ -288,8 +285,7 @@ export function CalculatorProvider({ children }: { children: ReactNode }) {
     inputs.interestRate,
     inputs.deposit,
     inputs.setupFee,
-    inputs.monthlyFee,
-    inputs.panelDegradationPct
+    inputs.monthlyFee
   );
 
   const value = useMemo<CalculatorContextValue>(
