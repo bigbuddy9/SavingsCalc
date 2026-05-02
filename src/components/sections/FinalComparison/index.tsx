@@ -16,15 +16,14 @@ export function FinalComparison() {
   const { realCost, cashflow, formatMoneyK, formatMoneyKUnsigned } = useCalculator();
   const copy = theme.copy.final;
 
-  // Year-by-year cumulative cash position for both scenarios.
-  //   Without solar: -cumulative bills only.
-  //   With solar:    -cumulative bills + (cumulative savings − cumulative payments).
-  // The vertical gap between the two lines at any year is the lifetime
-  // benefit solar has created up to that point.
+  // Two diverging lines from $0 — bills you'd pay vs savings you'd keep.
+  //   Without solar: −cumulative power bills (red, dives below zero).
+  //   With solar:    +cumulative solar savings (green, climbs above zero).
+  // The vertical span between them is the total contrast solar creates.
   const data = realCost.years.map((rc, i) => {
     const cf = cashflow.years[i];
     const withoutSolar = -rc.cumulativeBill;
-    const withSolar = withoutSolar + (cf?.cumNet ?? 0);
+    const withSolar = cf?.cumSavings ?? 0;
     return {
       year: rc.year,
       withoutSolar: Math.round(withoutSolar),
@@ -34,8 +33,8 @@ export function FinalComparison() {
   });
 
   const without = -realCost.twentyFiveYearPower;
-  const withSolar = without + cashflow.totalCumNet;
-  const swing = cashflow.totalCumNet;
+  const withSolar = cashflow.cumSavings25;
+  const swing = cashflow.cumSavings25;
 
   return (
     <section className="container-narrow">
@@ -62,10 +61,10 @@ export function FinalComparison() {
           {/* Comparison chart — visualises the divergence year over year. */}
           <div className="mt-6 rounded-2xl bg-white/[0.04] border border-white/[0.08] p-5 md:p-7 backdrop-blur-sm">
             <h3 className="text-[14px] md:text-[15px] font-semibold text-white/85">
-              25-year cumulative cash position
+              25-year contrast: bills vs savings
             </h3>
             <p className="mt-1 text-[12.5px] text-white/55">
-              Red trajectory: paying bills with no offset. Green: bills, loan repayments, and solar savings combined. The shaded area between them is your lifetime benefit.
+              Red below zero: every dollar you'd hand the utility. Green above zero: every dollar solar puts back in your pocket. The shaded area between them is your lifetime contrast.
             </p>
             <div className="mt-4 h-[320px] w-full">
               <ResponsiveContainer>

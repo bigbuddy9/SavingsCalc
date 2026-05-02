@@ -26,15 +26,29 @@ export function Section4Savings() {
       />
 
       <div className="mt-10">
-        <SavingsROISummary />
-      </div>
-
-      <div className="mt-6">
         <LoanInputs />
       </div>
 
       <div className="mt-6">
         <PaymentBreakdown />
+      </div>
+
+      <div className="mt-12">
+        <h3 className="text-xl md:text-2xl font-semibold text-ink tracking-tight mb-5">
+          Year-by-year cashflow
+        </h3>
+        <CashflowTable years={cashflow.years} />
+      </div>
+
+      <div className="mt-12">
+        <SavingsROISummary />
+      </div>
+
+      <div className="mt-12">
+        <h3 className="mb-5 text-xl md:text-2xl font-semibold text-ink tracking-tight">
+          {copy.chartTitle}
+        </h3>
+        <SavingsChart years={cashflow.years} />
       </div>
 
       {cashflow.hasLoan && day1 && (
@@ -62,21 +76,6 @@ export function Section4Savings() {
           </div>
         </div>
       )}
-
-      <div className="mt-12">
-        <h3 className="text-xl md:text-2xl font-semibold text-ink tracking-tight mb-5">
-          Year-by-year cashflow
-        </h3>
-        <CashflowTable years={cashflow.years} />
-      </div>
-
-      <div className="mt-12">
-        <h3 className="mb-5 text-xl md:text-2xl font-semibold text-ink tracking-tight">
-          {copy.chartTitle}
-        </h3>
-        <SavingsChart years={cashflow.years} />
-
-      </div>
 
       <div className="mt-12">
         <BreakEvenStat
