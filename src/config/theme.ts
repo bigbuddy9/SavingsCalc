@@ -46,9 +46,9 @@ export const theme = {
     final: {
       title: "The final comparison.",
       withoutLabel: "Without solar (25 years)",
-      withLabel: "With solar (25 years, net)",
-      swingLabel: "Total lifetime difference",
-      swingDesc: "in your favour by going solar.",
+      withLabel: "With solar (25 years)",
+      swingLabel: "Total 25-year solar savings",
+      swingDesc: "kept in your pocket instead of paid to the utility.",
     },
   },
 };
