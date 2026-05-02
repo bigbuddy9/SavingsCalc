@@ -39,7 +39,7 @@ The 8% annual electricity price increase is hardcoded based on two reference poi
 
 If a customer is in the 30% marginal tax bracket and pays a $4,000 bill, they actually had to *earn* $5,714 before tax to pay that bill. The tool surfaces this number to make the real cost of power tangible to wage earners.
 
-`pre_tax = bill ÷ (1 − tax_rate)` — standard formula.
+`pre_tax = bill ÷ (1 − tax_rate)` — standard formula. (Edge case: a 100% tax rate is clamped to a 1× multiplier to avoid divide-by-zero.)
 
 ---
 
@@ -103,7 +103,7 @@ Five orientations have full curves anchored on 6 datapoints each, validated agai
 | 40° | 17% |
 | 50° | 21% |
 
-#### South (validated — 6 datapoints)
+#### South (validated — 5 datapoints + 0° rule)
 
 | Tilt | Derate |
 |---:|---:|
@@ -114,7 +114,7 @@ Five orientations have full curves anchored on 6 datapoints each, validated agai
 | 40° | 56% |
 | 50° | 64% |
 
-#### East (validated — 6 datapoints)
+#### East (validated — 5 datapoints + 0° rule)
 
 | Tilt | Derate |
 |---:|---:|
@@ -125,7 +125,7 @@ Five orientations have full curves anchored on 6 datapoints each, validated agai
 | 40° | 32% |
 | 50° | 36% |
 
-#### NE (validated — 6 datapoints)
+#### NE (validated — 5 datapoints + 0° rule)
 
 | Tilt | Derate |
 |---:|---:|
@@ -136,7 +136,7 @@ Five orientations have full curves anchored on 6 datapoints each, validated agai
 | 40° | 20% |
 | 50° | 23% |
 
-#### SE (validated — 6 datapoints)
+#### SE (validated — 5 datapoints + 0° rule)
 
 | Tilt | Derate |
 |---:|---:|
@@ -231,6 +231,10 @@ annual_payment   = monthly_payment × 12 + monthly_loan_fee × 12
 ```
 
 The setup fee is rolled into the loan principal so it amortises over the term — this matches how Resinc reports cashflow. Cash purchases (loan term = 0) ignore setup fee, monthly fee, and amortisation entirely; the cashflow shows pure savings.
+
+Edge cases handled:
+- 0% interest rate → simple division `principal ÷ years` (the amortisation formula divides by zero otherwise).
+- 0 or negative principal → annual payment = 0.
 
 ### 4.2 Year-on-year savings
 
