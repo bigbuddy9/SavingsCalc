@@ -9,8 +9,8 @@ Intended audience: a solar business owner, accountant, or technically-curious cu
 ## TL;DR
 
 - Every number in the tool is derived from the customer's own inputs (bill, system size, finance terms, location) plus a small set of published constants (peak sun hours, derate curves, electricity inflation, panel degradation).
-- Output validated against **Resinc**'s published cashflow estimates — for a like-for-like quote (Sydney 2000, $4,000 annual bill, 23 × 440W system, 10-year loan at 6.29%) the tool's daily production, year-1 savings, year-1 payment, year-1 net cashflow, 25-year cumulative savings, and 25-year ROI all land within ~1% of Resinc's figures.
-- Where the model genuinely differs from Resinc, the differences are documented below with the reasoning.
+- Output is validated against **Resinc**'s published cashflow estimates — for a like-for-like quote (Sydney 2000, $4,000 annual bill, 23 × 440W system, 10-year loan at 6.29%) the tool's daily production, year-1 savings, year-1 payment, year-1 net cashflow, 25-year cumulative savings, and 25-year ROI all land within ~1% of Resinc's figures.
+- Where the model differs from Resinc, the differences are documented below with the reasoning.
 
 ---
 
@@ -21,12 +21,12 @@ Intended audience: a solar business owner, accountant, or technically-curious cu
 **Math:**
 
 ```
-year_n_bill = annual_bill × (1.08)^(n − 1)
-cumulative_25y_bill = sum of year_1_bill through year_25_bill
-pre_tax_earnings_required = bill / (1 − tax_rate)
+year_n_bill           = annual_bill × (1.08)^(n − 1)
+cumulative_25y_bill   = Σ year_n_bill  for n = 1..25
+pre_tax_earnings      = bill ÷ (1 − tax_rate)
 ```
 
-**Why 8%?**
+### Why 8%?
 
 The 8% annual electricity price increase is hardcoded based on two reference points:
 
@@ -35,28 +35,39 @@ The 8% annual electricity price increase is hardcoded based on two reference poi
 
 8% is a deliberately middle-of-the-road assumption between forecast and historical — neither maximally optimistic nor pessimistic.
 
-**Why pre-tax earnings?**
+### Why pre-tax earnings?
 
 If a customer is in the 30% marginal tax bracket and pays a $4,000 bill, they actually had to *earn* $5,714 before tax to pay that bill. The tool surfaces this number to make the real cost of power tangible to wage earners.
 
-`pre_tax = bill / (1 − tax_rate)` — standard formula.
+`pre_tax = bill ÷ (1 − tax_rate)` — standard formula.
 
 ---
 
 ## 2. Section 2 — Solar production
 
-**What it shows:** how many kWh per day the proposed system will produce.
+**What it shows:** how many kWh per day the proposed system will produce, and the dollar value of those kWh in year 1.
 
-**Math:**
+### 2.1 Per-orientation production formula
+
+For each of the 8 roof orientations independently:
 
 ```
 array_kW   = panels_in_orientation × panel_watts ÷ 1000
-daily_kWh  = array_kW × peak_sun_hours × (1 − orientation_derate(orientation, tilt)) × (1 − shading_derate)
+daily_kWh  = array_kW
+           × peak_sun_hours
+           × (1 − orientation_derate(orientation, tilt))
+           × (1 − shading_derate)
 ```
 
-Then summed across all 8 orientations.
+Then summed across all 8 orientations:
 
-### Peak sun hours (PSH)
+```
+total_daily_kWh   = Σ daily_kWh per orientation
+total_annual_kWh  = total_daily_kWh × 365
+weighted_derate   = Σ (derate × panels) ÷ total_panels
+```
+
+### 2.2 Peak sun hours (PSH)
 
 Published by the Bureau of Meteorology (Australia) and NREL National Solar Radiation Database (USA). Annual daily averages used in the tool:
 
@@ -73,42 +84,116 @@ Published by the Bureau of Meteorology (Australia) and NREL National Solar Radia
 | Melbourne | 4.5 |
 | Hobart | 4.0 |
 
-For other countries, country-level annual averages are sourced from NASA POWER irradiance data. 45+ countries are supported with country-level resolution; AU and US have postcode-level resolution down to the city.
+For other countries, country-level annual averages are sourced from NASA POWER irradiance data. 45+ countries are supported; AU and US have postcode-level resolution down to the city.
 
-### Orientation × tilt derate curves
+### 2.3 Orientation × tilt derate curves
 
 The "derate" is the percentage of theoretical maximum production lost because the panels aren't pointing perfectly at the sun. Calibrated to **Resinc's published derate values** at 100 panels × 440W = 44 kW.
 
-Five orientations (N, S, E, NE, SE) have full curves anchored on 6 datapoints each, validated against Resinc:
+Five orientations have full curves anchored on 6 datapoints each, validated against Resinc:
 
-| Orientation | 0° | 10° | 20° | 30° | 40° | 50° |
-|---|---:|---:|---:|---:|---:|---:|
-| N (optimal) | 25% | 20% | 16% | **15%** | 17% | 21% |
-| S | **25%** | 30% | 37% | 46% | 56% | 64% |
-| E | 25% | **24%** | 26% | 28% | 32% | 36% |
-| NE | 25% | 20% | **18%** | **18%** | 20% | 23% |
-| SE | 25% | **28%** | 33% | 39% | 45% | 52% |
+#### North (validated — 6 datapoints)
 
-(Bold = optimum tilt for that orientation.)
+| Tilt | Derate |
+|---:|---:|
+| 0°  | 25% |
+| 10° | 20% |
+| 20° | 16% |
+| 30° | **15%** ← optimum |
+| 40° | 17% |
+| 50° | 21% |
 
-For tilts between published values, the tool linearly interpolates. For tilts outside the published range (e.g. 60°), it extrapolates using the nearest segment slope, capped at 95% derate.
+#### South (validated — 6 datapoints)
 
-W, NW, SW currently mirror E, NE, SE (a roof facing west is treated identically to one facing east). This is documented in the code as a known approximation; the published Resinc datapoints needed to break the mirror are the only outstanding calibration item.
+| Tilt | Derate |
+|---:|---:|
+| 0°  | **25%** ← optimum |
+| 10° | 30% |
+| 20° | 37% |
+| 30° | 46% |
+| 40° | 56% |
+| 50° | 64% |
 
-### Hemisphere flip
+#### East (validated — 6 datapoints)
 
-For Northern Hemisphere customers, the optimal orientation is **South**, not North. The tool detects hemisphere from the country and internally swaps `N ↔ S`, `NE ↔ SE`, `NW ↔ SW` before looking up the derate. Same Resinc-calibrated curves; the labels just match the customer's local intuition.
+| Tilt | Derate |
+|---:|---:|
+| 0°  | 25% |
+| 10° | **24%** ← optimum |
+| 20° | 26% |
+| 30° | 28% |
+| 40° | 32% |
+| 50° | 36% |
 
-### Year-1 savings
+#### NE (validated — 6 datapoints)
+
+| Tilt | Derate |
+|---:|---:|
+| 0°  | 25% |
+| 10° | 20% |
+| 20° | **18%** ← optimum |
+| 30° | **18%** ← optimum (flat from 20° to 30°) |
+| 40° | 20% |
+| 50° | 23% |
+
+#### SE (validated — 6 datapoints)
+
+| Tilt | Derate |
+|---:|---:|
+| 0°  | 25% |
+| 10° | **28%** ← optimum |
+| 20° | 33% |
+| 30° | 39% |
+| 40° | 45% |
+| 50° | 52% |
+
+### 2.4 Universal derate rules
+
+**Flat-panel rule (0° tilt).** A panel lying flat on the roof doesn't care which way the roof faces. Every orientation's derate at 0° tilt = **25%**. Confirmed against Resinc for N, S, E.
+
+**Interpolation.** For tilts between published values, the tool linearly interpolates. For tilts outside the table (e.g. 60°), it linearly extrapolates using the slope of the nearest segment, capped at 95% derate.
+
+**Mirror rule.** W, NW, SW currently mirror E, NE, SE — a roof facing west is treated identically to one facing east. This is a documented approximation; published Resinc datapoints to break the mirror are the only outstanding calibration item.
+
+| Orientation | Behaves identically to |
+|---|---|
+| West (W)         | East (E) |
+| North-West (NW)  | North-East (NE) |
+| South-West (SW)  | South-East (SE) |
+
+### 2.5 Hemisphere flip
+
+Curves are calibrated for Australia, where **North** faces the sun. In the northern hemisphere (USA, etc.) **South** faces the sun. So when `hemisphere === "N"`, the orientation is flipped before lookup:
+
+| User picks | Looks up the curve for |
+|---|---|
+| N  | S |
+| S  | N |
+| NE | SE |
+| SE | NE |
+| NW | SW |
+| SW | NW |
+| E  | E (unchanged — symmetrical) |
+| W  | W (unchanged — symmetrical) |
+
+A Phoenix homeowner picking "South" gets the same physics as a Brisbane homeowner picking "North". One set of curves, both hemispheres.
+
+### 2.6 Year-1 savings
 
 ```
-self_use_savings = self_use_kWh × 365 × peak_rate
-excess_export_kWh = max(0, daily_production − self_use_kWh)
-fit_earnings = excess_export_kWh × 365 × fit_rate
-year_1_savings = self_use_savings + fit_earnings
+self_use_savings   = self_use_kWh × 365 × peak_rate
+excess_export_kWh  = max(0, daily_production − self_use_kWh)
+fit_earnings       = excess_export_kWh × 365 × fit_rate
+year_1_savings     = self_use_savings + fit_earnings
 ```
 
-Self-use is the kWh the home consumes from solar (directly or via battery). Anything produced above that is exported to the grid for the feed-in tariff. Both rates are user inputs taken from the customer's bill.
+| Field | Source | Notes |
+|---|---|---|
+| `self_use_kWh` | User input | Daily kWh of solar consumed by the home (incl. via battery). |
+| `peak_rate`    | User input | $/kWh from grid. |
+| `fit_rate`     | User input | Feed-in tariff $/kWh. |
+
+Self-use is the kWh the home consumes from solar (directly or via battery). Anything produced above that is exported to the grid for the feed-in tariff. Both rates come from the customer's bill.
 
 ---
 
@@ -119,10 +204,10 @@ Self-use is the kWh the home consumes from solar (directly or via battery). Anyt
 **Math:**
 
 ```
-system_value = sum of all line items entered
-solar_stc_deduction = solar_stc_count × solar_stc_price
-battery_stc_deduction = battery_stc_count × battery_stc_price
-investment = system_value − solar_stc_deduction − battery_stc_deduction − discount
+system_value           = sum of all line items entered
+solar_stc_deduction    = solar_stc_count × solar_stc_price
+battery_stc_deduction  = battery_stc_count × battery_stc_price
+investment             = system_value − solar_stc_deduction − battery_stc_deduction − discount
 ```
 
 Line items are user-editable: the sales rep can rename them, add new ones, or remove them per customer. STCs (Small-scale Technology Certificates) are the federal government solar rebate, deducted directly from the install price at the point of sale.
@@ -133,21 +218,21 @@ Line items are user-editable: the sales rep can rename them, add new ones, or re
 
 **What it shows:** year-by-year cashflow over 25 years, with a payback year and total ROI.
 
-### Loan amortisation
+### 4.1 Loan amortisation
 
 Standard monthly-compounded amortisation (the same formula every Australian home loan and Resinc spreadsheet uses):
 
 ```
-loan_principal = max(0, investment − deposit + setup_fee)
-monthly_rate = annual_interest_rate ÷ 12
-months = loan_term × 12
-monthly_payment = principal × (r × (1 + r)^n) ÷ ((1 + r)^n − 1)
-annual_payment = monthly_payment × 12 + monthly_loan_fee × 12
+loan_principal   = max(0, investment − deposit + setup_fee)
+monthly_rate     = annual_interest_rate ÷ 12
+months           = loan_term × 12
+monthly_payment  = principal × (r × (1 + r)^n) ÷ ((1 + r)^n − 1)
+annual_payment   = monthly_payment × 12 + monthly_loan_fee × 12
 ```
 
 The setup fee is rolled into the loan principal so it amortises over the term — this matches how Resinc reports cashflow. Cash purchases (loan term = 0) ignore setup fee, monthly fee, and amortisation entirely; the cashflow shows pure savings.
 
-### Year-on-year savings
+### 4.2 Year-on-year savings
 
 ```
 year_n_savings = year_1_savings × ((1 + 0.08) × (1 − 0.009))^(n − 1)
@@ -161,32 +246,38 @@ Two compounding factors apply each year:
 
 This is the Resinc convention. Removing degradation (setting it to 0%) gives an "optimistic" 8%/yr growth model that overstates 25-year cumulative savings by ~25%.
 
-### Payback year
+### 4.3 Payback year
 
 The year cumulative solar savings first equal or exceed the upfront investment. After that, every additional dollar of savings is pure return on the original capital.
 
-### ROI
+### 4.4 ROI
 
 Two flavours:
 
-- **Per-year ROI** (in the cashflow table) = `annual_savings / investment × 100`. Resinc convention. Always positive; trends up slightly each year as savings compound.
-- **Total ROI** (in the summary header) = `cumulative_savings_to_year_N / investment × 100`. Grows from ~9% at year 1 to ~530% by year 25 on a typical Australian quote.
+- **Per-year ROI** (in the cashflow table) = `annual_savings ÷ investment × 100`. Resinc convention. Always positive; trends up slightly each year as savings compound.
+- **Total ROI** (in the summary header) = `cumulative_savings_to_year_N ÷ investment × 100`. Grows from ~9% at year 1 to ~530% by year 25 on a typical Australian quote.
 
-### Cashflow positive from day one
+### 4.5 Cashflow positive from day one
 
-Triggered when year-1 savings exceed year-1 loan repayments + monthly fees. Means the customer is net cash-positive immediately — savings cover the loan with money left over from year one. Not all systems will trigger this; it depends on system size, finance terms, and electricity rates.
+Triggered when year-1 savings exceed year-1 loan repayments + monthly fees. Means the customer is net cash-positive immediately — savings cover the loan with money left over from year one. Not all systems trigger this; it depends on system size, finance terms, and electricity rates.
 
 ---
 
 ## 5. Final comparison
 
+The chart contrasts two diverging scenarios from $0:
+
 ```
-without_solar = −cumulative_25_year_bill          (cash out, no offset)
-with_solar    = without_solar + cashflow_total    (bills offset by savings, less repayments)
-lifetime_difference = cashflow_total              (the delta solar creates)
+without_solar (red, below zero)  = −cumulative_25y_bill
+with_solar    (green, above zero) = +cumulative_solar_savings
 ```
 
-This is the single most important number for the customer: how much money they end up with at year 25, with vs without solar.
+The headline swing — `Total 25-year solar savings` — is the gross cumulative savings the system produces over 25 years (`cumSavings25`). This is the same number reported next to "25 years" in the ROI Summary card.
+
+Two interpretations matter, and the calculator surfaces both:
+
+- **Gross 25-year savings (the swing):** the total dollars the solar system generates in offset bills + feed-in earnings, before any system costs are subtracted. This is what the customer "earns" from the panels.
+- **Net 25-year position (the cashflow table):** gross savings minus loan repayments and fees. This is what's left in the customer's pocket after paying for the system. For cash purchases, gross ≈ net (the only subtraction is the upfront investment, recovered at the payback year). For long-term financed systems, net is meaningfully smaller because interest and fees compound.
 
 ---
 
@@ -218,7 +309,7 @@ Honest list of limitations, in case anyone asks:
 - **Soiling / dust accumulation.** Not separately modelled (some of it is captured implicitly in the calibrated derate values).
 - **Property-value uplift** from solar installation. Not modelled — the tool only counts direct electricity savings.
 
-These are honest omissions. None of them invalidate the headline numbers, but they're worth knowing if a customer pushes hard on edge cases.
+These are honest omissions. None invalidate the headline numbers, but they're worth knowing if a customer pushes hard on edge cases.
 
 ---
 
@@ -237,3 +328,28 @@ These are honest omissions. None of them invalidate the headline numbers, but th
 For a reference scenario tested during development (Sydney 2000, $4,000 bill, 23 × 440W North-30°, 10-year loan @ 6.29%, $0 deposit, $395 setup, $10/mo fee, 30 kWh self-use, $0.37 peak, $0.05 FIT), all six numbers land within ~1% of Resinc's published values.
 
 If you find a scenario where the numbers disagree by more than 5%, that's worth flagging — the calculator is built to be auditable, not a black box.
+
+---
+
+## 9. Where the logic lives in code
+
+| Concept | File |
+|---|---|
+| Constants (8% inflation, 0.9% degradation, month weights) | `src/lib/constants.ts` |
+| Derate lookups + interpolation + hemisphere flip | `src/lib/solar.ts` |
+| Postcode → city / hemisphere / sun-hours | `src/lib/location.ts` |
+| Daily/annual production + Year-1 savings | `src/hooks/useSystemCalc.ts` |
+| Real-cost compounding (Section 1) | `src/hooks/useRealCostCalc.ts` |
+| Investment breakdown (Section 3) | `src/hooks/usePricingCalc.ts` |
+| Loan amortisation + 25-year cashflow | `src/hooks/useCashflowCalc.ts` |
+| All inputs (incl. country + postcode) | `src/state/CalculatorContext.tsx` |
+| Country/postcode UI | `src/components/sections/Section2System/LocationPicker.tsx` |
+| Parity tests | `src/__tests__/calc.test.ts` |
+
+---
+
+## 10. Open questions / TODO
+
+- Confirm `peak_sun_hours` table values (`src/lib/location.ts`) against Resinc / installer-published numbers for non-Brisbane Aus capitals.
+- Add dedicated W / NW / SW derate curves once Resinc datapoints land — currently mirrored from E / NE / SE.
+- Add Canada, NZ, UK to the country dropdown when needed (lookup table + `POSTCODE_LENGTH` entry).
