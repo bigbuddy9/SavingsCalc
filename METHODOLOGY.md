@@ -153,13 +153,15 @@ Five orientations have full curves anchored on 6 datapoints each, validated agai
 
 **Interpolation.** For tilts between published values, the tool linearly interpolates. For tilts outside the table (e.g. 60°), it linearly extrapolates using the slope of the nearest segment, capped at 95% derate.
 
-**Mirror rule.** W, NW, SW currently mirror E, NE, SE — a roof facing west is treated identically to one facing east. This is a documented approximation; published Resinc datapoints to break the mirror are the only outstanding calibration item.
+**Western orientations are flat curves.** W, NW, and SW use a single tilt-independent derate value in Resinc — the derate doesn't change with tilt. They're also slightly worse than their eastern counterparts because panels run hotter in the afternoon (the "afternoon thermal penalty"), reducing efficiency.
 
-| Orientation | Behaves identically to |
-|---|---|
-| West (W)         | East (E) |
-| North-West (NW)  | North-East (NE) |
-| South-West (SW)  | South-East (SE) |
+| Orientation | Resinc derate (flat across all tilts) | Vs. east counterpart |
+|---|---:|---|
+| W  | 30% | E @ 30° = 28% (+2pp) |
+| NW | 19% | NE @ 30° = 18% (+1pp) |
+| SW | 40% | SE @ 30° = 39% (+1pp) |
+
+These were validated against Resinc at 100 panels × 440W (44 kW) at 30° tilt.
 
 ### 2.5 Hemisphere flip
 
@@ -355,5 +357,4 @@ If you find a scenario where the numbers disagree by more than 5%, that's worth 
 ## 10. Open questions / TODO
 
 - Confirm `peak_sun_hours` table values (`src/lib/location.ts`) against Resinc / installer-published numbers for non-Brisbane Aus capitals.
-- Add dedicated W / NW / SW derate curves once Resinc datapoints land — currently mirrored from E / NE / SE.
 - Add Canada, NZ, UK to the country dropdown when needed (lookup table + `POSTCODE_LENGTH` entry).

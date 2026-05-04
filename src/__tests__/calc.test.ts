@@ -98,16 +98,19 @@ describe("Solar production parity with Resinc", () => {
     expect(derateFor("S", 30)).toBeCloseTo(0.46, 5);
   });
 
-  it("0° tilt = 25% derate for every orientation (flat-panel rule)", () => {
-    for (const o of ["N", "NE", "E", "SE", "S", "SW", "W", "NW"] as const) {
+  it("0° tilt = 25% derate for N/NE/E/SE/S (flat-panel rule)", () => {
+    for (const o of ["N", "NE", "E", "SE", "S"] as const) {
       expect(derateFor(o, 0)).toBeCloseTo(0.25, 5);
     }
   });
 
-  it("mirrors W to E and NW to NE and SW to SE", () => {
-    expect(derateFor("W", 30)).toBeCloseTo(derateFor("E", 30), 5);
-    expect(derateFor("NW", 30)).toBeCloseTo(derateFor("NE", 30), 5);
-    expect(derateFor("SW", 30)).toBeCloseTo(derateFor("SE", 30), 5);
+  it("Resinc W/NW/SW flat curves — derate is constant across all tilts", () => {
+    // Western orientations: tilt-independent in Resinc. Anchored at 30°.
+    for (const tilt of [0, 10, 20, 30, 40, 50]) {
+      expect(derateFor("W", tilt)).toBeCloseTo(0.30, 5);
+      expect(derateFor("NW", tilt)).toBeCloseTo(0.19, 5);
+      expect(derateFor("SW", tilt)).toBeCloseTo(0.40, 5);
+    }
   });
 
   it("south at 0° tilt is better than south at 30° tilt", () => {
