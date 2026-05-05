@@ -280,7 +280,8 @@ export function CalculatorProvider({ children }: { children: ReactNode }) {
   // Year-1 savings now derived in Section 2 from the system + rates inputs.
   const cashflow = useCashflowCalc(
     pricing.investment,
-    system.year1Savings,
+    system.year1SelfUseSavings,
+    system.year1ExportEarnings,
     inputs.loanTerm,
     inputs.interestRate,
     inputs.deposit,

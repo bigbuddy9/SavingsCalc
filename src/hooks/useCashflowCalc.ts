@@ -47,7 +47,8 @@ export function calculateLoanPayment(principal: number, annualRatePercent: numbe
 
 export function useCashflowCalc(
   investment: number,
-  yr1Savings: number,
+  yr1SelfUseSavings: number,
+  yr1ExportEarnings: number,
   loanTermYears: number,
   interestRatePercent: number,
   deposit: number = 0,
@@ -73,10 +74,15 @@ export function useCashflowCalc(
     const annualMonthlyFees = Math.max(0, monthlyFee) * 12;
     const annualPayment = annualLoanPayment + annualMonthlyFees;
 
-    // Effective year-on-year savings growth = electricity inflation × panel
-    // output retention. Resinc-style: 8% inflation × ~0.991 retention ≈ 7%/yr.
-    // Degradation is a hidden constant — see lib/constants.ts.
-    const yearMultiplier = (1 + PRICE_INCREASE) * (1 - PANEL_DEGRADATION);
+    // Resinc convention — verified by reverse-engineering Resinc's published
+    // year-by-year cashflow:
+    //   Self-use savings compound at (1+inflation)×(1-degradation), reflecting
+    //     rising grid prices on a slowly-degrading kWh base.
+    //   Export earnings stay FLAT — FIT rates don't inflate in practice and
+    //     Resinc treats the export $/yr as a constant. (See METHODOLOGY.md §4.2.)
+    const selfUseMultiplier = (1 + PRICE_INCREASE) * (1 - PANEL_DEGRADATION);
+    const safeSelfUseY1 = Math.max(0, yr1SelfUseSavings);
+    const safeExportY1 = Math.max(0, yr1ExportEarnings);
 
     const years: CashflowYearRow[] = [];
     let cumPayments = 0;
@@ -87,7 +93,9 @@ export function useCashflowCalc(
     for (let year = 1; year <= 25; year++) {
       const inLoanTerm = hasLoan && year <= term;
       const payment = inLoanTerm ? annualPayment : 0;
-      const savings = yr1Savings * Math.pow(yearMultiplier, year - 1);
+      const selfUseN = safeSelfUseY1 * Math.pow(selfUseMultiplier, year - 1);
+      const exportN = safeExportY1; // flat across all years
+      const savings = selfUseN + exportN;
       cumPayments += payment;
       cumSavings += savings;
       const netAnnual = savings - payment;
@@ -112,5 +120,14 @@ export function useCashflowCalc(
       cashflowPositiveDay1,
       hasLoan,
     };
-  }, [investment, yr1Savings, loanTermYears, interestRatePercent, deposit, setupFee, monthlyFee]);
+  }, [
+    investment,
+    yr1SelfUseSavings,
+    yr1ExportEarnings,
+    loanTermYears,
+    interestRatePercent,
+    deposit,
+    setupFee,
+    monthlyFee,
+  ]);
 }

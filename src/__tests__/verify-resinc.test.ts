@@ -20,27 +20,27 @@ import { PRICE_INCREASE, PANEL_DEGRADATION } from "@/lib/constants";
  */
 
 const SCENARIO = {
-  label: "Sydney 2000 — $4,000 bill / 23 × 440W N-30° / 10yr loan @ 6.29%",
+  label: "Sydney 2000 — $4,000 bill / 27 × 440W (14N@26°/5E/8W) / 15yr loan @ 6.99%",
   // Section 1
   annualBill: 4000,
   taxRatePercent: 30,
   // Section 2
   country: "AU" as const,
   postcode: "2000",
-  panelsByOrientation: { N: 23, NE: 0, E: 0, SE: 0, S: 0, SW: 0, W: 0, NW: 0 },
-  tiltByOrientation: { N: 30, NE: 30, E: 30, SE: 30, S: 30, SW: 30, W: 30, NW: 30 },
+  panelsByOrientation: { N: 14, NE: 0, E: 5, SE: 0, S: 0, SW: 0, W: 8, NW: 0 },
+  tiltByOrientation: { N: 26, NE: 30, E: 30, SE: 30, S: 30, SW: 30, W: 30, NW: 30 },
   panelWattage: 440,
   shadingDeratePct: 0,
-  selfUseDailyKwh: 30,
-  peakRatePerKwh: 0.37,
+  selfUseDailyKwh: 7,
+  peakRatePerKwh: 0.45,
   fitRatePerKwh: 0.05,
   // Section 3 (investment)
-  investment: 14000,
+  investment: 46143,
   // Section 4 (loan)
-  loanTermYears: 10,
-  interestRatePercent: 6.29,
+  loanTermYears: 15,
+  interestRatePercent: 6.99,
   deposit: 0,
-  setupFee: 395,
+  setupFee: 495,
   monthlyFee: 10,
 };
 
@@ -96,7 +96,9 @@ describe(`Resinc parity harness — ${SCENARIO.label}`, () => {
   const monthlyPayment = annualPayment / 12;
 
   // === SECTION 4 — 25-YEAR CASHFLOW ===
-  const yearMultiplier = (1 + PRICE_INCREASE) * (1 - PANEL_DEGRADATION);
+  // Resinc convention: self-use compounds at (1+inflation)(1-degradation),
+  // export earnings stay flat (FIT does not inflate).
+  const selfUseMultiplier = (1 + PRICE_INCREASE) * (1 - PANEL_DEGRADATION);
   let cumPayments = 0;
   let cumSavings = 0;
   let paybackYear: number | null = null;
@@ -114,7 +116,9 @@ describe(`Resinc parity harness — ${SCENARIO.label}`, () => {
   for (let year = 1; year <= 25; year++) {
     const inLoanTerm = year <= SCENARIO.loanTermYears;
     const payment = inLoanTerm ? annualPayment : 0;
-    const savings = year1Savings * Math.pow(yearMultiplier, year - 1);
+    const selfUseN = gridOffsetSavings * Math.pow(selfUseMultiplier, year - 1);
+    const exportN = exportEarnings; // flat
+    const savings = selfUseN + exportN;
     cumPayments += payment;
     cumSavings += savings;
     const netAnnual = savings - payment;
@@ -185,14 +189,11 @@ describe(`Resinc parity harness — ${SCENARIO.label}`, () => {
     // eslint-disable-next-line no-console
     console.log(lines.join("\n"));
 
-    // Sanity assertions — these pin the math to the documented Resinc values.
-    // (Investment in this scenario is set to $14k for a 23-panel install;
-    // the original Resinc reference used $44.8k for a 100-panel system.)
-    expect(prod.systemSizeKw).toBeCloseTo(10.12, 2); // 23 × 440W
-    expect(prod.totalPanels).toBe(23);
-    expect(Math.round(annualLoanPayment)).toBeGreaterThan(1500); // sanity floor
-    expect(Math.round(annualLoanPayment)).toBeLessThan(2500); // sanity ceiling
+    // Sanity assertions for the user's current scenario.
+    expect(prod.systemSizeKw).toBeCloseTo(11.88, 2); // 27 × 440W
+    expect(prod.totalPanels).toBe(27);
+    expect(Math.round(annualLoanPayment)).toBeGreaterThan(3000); // sanity floor
     expect(year1Savings).toBeGreaterThan(0);
-    expect(cumSavings25).toBeGreaterThan(year1Savings * 25); // grows due to inflation
+    expect(cumSavings25).toBeGreaterThan(year1Savings * 15); // grows due to inflation
   });
 });

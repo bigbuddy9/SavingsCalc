@@ -22,6 +22,12 @@ export type SystemResult = {
   annualProductionKwh: number;
   monthly: SystemMonthRow[];
   year1Savings: number;
+  /** Year-1 savings split: bill offset from self-consumed solar.
+   *  Inflates at electricity-price growth × panel degradation in later years. */
+  year1SelfUseSavings: number;
+  /** Year-1 savings split: feed-in earnings from exported solar.
+   *  Stays FLAT in later years — Resinc convention; FIT does not inflate. */
+  year1ExportEarnings: number;
   selfUseDailyKwh: number;
   excessExportDailyKwh: number;
   solarCoveragePct: number; // self-use / daily-usage × 100
@@ -69,6 +75,8 @@ export function useSystemCalc(args: {
       ...prod,
       monthly,
       year1Savings,
+      year1SelfUseSavings: gridOffsetSavings,
+      year1ExportEarnings: exportEarnings,
       selfUseDailyKwh: safeSelfUse,
       excessExportDailyKwh: excessExportDaily,
       solarCoveragePct,
