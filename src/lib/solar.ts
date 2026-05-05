@@ -39,12 +39,12 @@ export const ORIENTATION_LABEL: Record<Orientation, string> = {
   NW: "North-West",
 };
 
-/** Mirror map: NW behaves like NE, W like E, SW like SE. */
-const MIRROR: Partial<Record<Orientation, Orientation>> = {
-  NW: "NE",
-  W: "E",
-  SW: "SE",
-};
+/**
+ * Mirror map — only used as a fallback if a curve has fewer than 2
+ * datapoints. After Resinc-calibrated W/NW/SW flat curves landed, no
+ * orientation needs mirroring in practice.
+ */
+const MIRROR: Partial<Record<Orientation, Orientation>> = {};
 
 /**
  * North↔South flip used for northern-hemisphere lookups.
@@ -76,10 +76,16 @@ const DERATE_CURVES: Record<Orientation, DerateCurve> = {
   // Fully validated against Resinc (6 datapoints across 0°-50°)
   SE: { 0: 0.25, 10: 0.28, 20: 0.33, 30: 0.39, 40: 0.45, 50: 0.52 },
 
-  // Mirrors — resolved at lookup time via MIRROR map.
-  NW: { 0: 0.25, 10: 0.20, 20: 0.18, 30: 0.18, 40: 0.20, 50: 0.23 },
-  W:  { 0: 0.25, 10: 0.24, 20: 0.26, 30: 0.28, 40: 0.32, 50: 0.36 },
-  SW: { 0: 0.25, 10: 0.28, 20: 0.33, 30: 0.39, 40: 0.45, 50: 0.52 },
+  // Western orientations are flat curves in Resinc — derate doesn't
+  // change with tilt. Slightly worse than their eastern counterparts
+  // (afternoon thermal penalty: panels run hotter in the afternoon,
+  // reducing efficiency). Anchored at 30° tilt against Resinc:
+  //   W  +2pp vs E  (28% → 30%)
+  //   NW +1pp vs NE (18% → 19%)
+  //   SW +1pp vs SE (39% → 40%)
+  NW: { 0: 0.19, 10: 0.19, 20: 0.19, 30: 0.19, 40: 0.19, 50: 0.19 },
+  W:  { 0: 0.30, 10: 0.30, 20: 0.30, 30: 0.30, 40: 0.30, 50: 0.30 },
+  SW: { 0: 0.40, 10: 0.40, 20: 0.40, 30: 0.40, 40: 0.40, 50: 0.40 },
 };
 
 /** Optimal tilt per orientation for Australian latitudes (~28-35°S). */

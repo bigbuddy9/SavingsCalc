@@ -153,13 +153,15 @@ Five orientations have full curves anchored on 6 datapoints each, validated agai
 
 **Interpolation.** For tilts between published values, the tool linearly interpolates. For tilts outside the table (e.g. 60°), it linearly extrapolates using the slope of the nearest segment, capped at 95% derate.
 
-**Mirror rule.** W, NW, SW currently mirror E, NE, SE — a roof facing west is treated identically to one facing east. This is a documented approximation; published Resinc datapoints to break the mirror are the only outstanding calibration item.
+**Western orientations are flat curves.** W, NW, and SW use a single tilt-independent derate value in Resinc — the derate doesn't change with tilt. They're also slightly worse than their eastern counterparts because panels run hotter in the afternoon (the "afternoon thermal penalty"), reducing efficiency.
 
-| Orientation | Behaves identically to |
-|---|---|
-| West (W)         | East (E) |
-| North-West (NW)  | North-East (NE) |
-| South-West (SW)  | South-East (SE) |
+| Orientation | Resinc derate (flat across all tilts) | Vs. east counterpart |
+|---|---:|---|
+| W  | 30% | E @ 30° = 28% (+2pp) |
+| NW | 19% | NE @ 30° = 18% (+1pp) |
+| SW | 40% | SE @ 30° = 39% (+1pp) |
+
+These were validated against Resinc at 100 panels × 440W (44 kW) at 30° tilt.
 
 ### 2.5 Hemisphere flip
 
@@ -236,19 +238,25 @@ Edge cases handled:
 - 0% interest rate → simple division `principal ÷ years` (the amortisation formula divides by zero otherwise).
 - 0 or negative principal → annual payment = 0.
 
-### 4.2 Year-on-year savings
+### 4.2 Year-on-year savings — split compounding (Resinc convention)
+
+Year-1 savings split into **two components** that compound differently:
 
 ```
-year_n_savings = year_1_savings × ((1 + 0.08) × (1 − 0.009))^(n − 1)
-              ≈ year_1_savings × 1.0707^(n − 1)
+self_use_year_n = self_use_y1 × ((1 + 0.08) × (1 − 0.009))^(n − 1)
+               ≈ self_use_y1 × 1.0707^(n − 1)
+export_year_n  = export_y1   (FLAT — no inflation, no degradation)
+year_n_savings = self_use_year_n + export_year_n
 ```
 
-Two compounding factors apply each year:
+**Why split?** Reverse-engineering Resinc's published year-by-year cashflow shows they treat the two streams differently — and so should we:
 
-1. **+8% electricity inflation** (Section 1 assumption).
-2. **−0.9% panel output degradation.** Tier-1 panel manufacturers warrant 0.5–1.0%/yr; 0.9% is the published Resinc assumption. Combined with inflation, savings grow at a net ~7.07%/yr.
+1. **Self-use savings** rise with grid prices. Compound at +8% electricity inflation × −0.9% panel output degradation = ~7.07%/yr net.
+2. **Export earnings** stay flat. The feed-in tariff is a fixed retailer rate that does not inflate in practice; Resinc treats the export $/yr as a constant across all 25 years.
 
-This is the Resinc convention. Removing degradation (setting it to 0%) gives an "optimistic" 8%/yr growth model that overstates 25-year cumulative savings by ~25%.
+Validated against a Resinc reference quote with 38% export-heavy savings: split model lands Y1–Y15 within 1–2% of Resinc. The pre-split lumped-compounding model overshot by 25–30% in low-self-use scenarios because it inflated export earnings as if FIT grew at 8%/yr.
+
+Constants (`PRICE_INCREASE = 0.08`, `PANEL_DEGRADATION = 0.009`) live in `src/lib/constants.ts`.
 
 ### 4.3 Payback year
 
@@ -355,5 +363,4 @@ If you find a scenario where the numbers disagree by more than 5%, that's worth 
 ## 10. Open questions / TODO
 
 - Confirm `peak_sun_hours` table values (`src/lib/location.ts`) against Resinc / installer-published numbers for non-Brisbane Aus capitals.
-- Add dedicated W / NW / SW derate curves once Resinc datapoints land — currently mirrored from E / NE / SE.
 - Add Canada, NZ, UK to the country dropdown when needed (lookup table + `POSTCODE_LENGTH` entry).
