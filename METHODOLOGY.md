@@ -183,11 +183,18 @@ A Phoenix homeowner picking "South" gets the same physics as a Brisbane homeowne
 ### 2.6 Year-1 savings
 
 ```
-self_use_savings   = self_use_kWh × 365 × peak_rate
+self_use_savings   = self_use_kWh × 365 × peak_rate × (1 − system_loss)
 excess_export_kWh  = max(0, daily_production − self_use_kWh)
-fit_earnings       = excess_export_kWh × 365 × fit_rate
+fit_earnings       = excess_export_kWh × 365 × fit_rate × (1 − system_loss)
 year_1_savings     = self_use_savings + fit_earnings
 ```
+
+`system_loss = 1.5%` accounts for soiling, cabling resistance, inverter
+efficiency reserve, and other small losses not captured by the
+orientation × tilt derate. Reverse-engineered from Resinc — for the same
+inputs, Resinc reports ~98.5% of the raw self-use × peak + excess × FIT
+math. The factor is applied in Y1 only; subsequent years compound from
+the post-loss Y1 value.
 
 | Field | Source | Notes |
 |---|---|---|
@@ -243,20 +250,20 @@ Edge cases handled:
 Year-1 savings split into **two components** that compound differently:
 
 ```
-self_use_year_n = self_use_y1 × ((1 + 0.08) × (1 − 0.009))^(n − 1)
-               ≈ self_use_y1 × 1.0707^(n − 1)
+self_use_year_n = self_use_y1 × ((1 + 0.08) × (1 − 0.007))^(n − 1)
+               ≈ self_use_y1 × 1.0724^(n − 1)
 export_year_n  = export_y1   (FLAT — no inflation, no degradation)
 year_n_savings = self_use_year_n + export_year_n
 ```
 
 **Why split?** Reverse-engineering Resinc's published year-by-year cashflow shows they treat the two streams differently — and so should we:
 
-1. **Self-use savings** rise with grid prices. Compound at +8% electricity inflation × −0.9% panel output degradation = ~7.07%/yr net.
+1. **Self-use savings** rise with grid prices. Compound at +8% electricity inflation × −0.7% panel output degradation ≈ 7.24%/yr net.
 2. **Export earnings** stay flat. The feed-in tariff is a fixed retailer rate that does not inflate in practice; Resinc treats the export $/yr as a constant across all 25 years.
 
-Validated against a Resinc reference quote with 38% export-heavy savings: split model lands Y1–Y15 within 1–2% of Resinc. The pre-split lumped-compounding model overshot by 25–30% in low-self-use scenarios because it inflated export earnings as if FIT grew at 8%/yr.
+Validated against multiple Resinc reference quotes: combined with the 1.5% system-loss factor (§2.6), this model lands Y1–Y15 within ±0.5% of Resinc. The 25-year cumulative still runs ~10% high because Resinc applies an unknown taper in years 16–25 that we cannot model without their late-year breakdown.
 
-Constants (`PRICE_INCREASE = 0.08`, `PANEL_DEGRADATION = 0.009`) live in `src/lib/constants.ts`.
+Constants (`PRICE_INCREASE = 0.08`, `PANEL_DEGRADATION = 0.007`, `SYSTEM_LOSS_FACTOR = 0.015`) live in `src/lib/constants.ts`.
 
 ### 4.3 Payback year
 
@@ -298,7 +305,8 @@ Two interpretations matter, and the calculator surfaces both:
 | Assumption | Value | Source |
 |---|---|---|
 | Electricity price inflation | 8.0%/year | AEMO / Aurora forecasts + ABS historical |
-| Panel output degradation | 0.9%/year | Tier-1 warranty average; matches Resinc |
+| Panel output degradation | 0.7%/year | Reverse-engineered from Resinc's published cashflow |
+| System loss factor | 1.5% (Y1 only) | Reverse-engineered from Resinc; soiling, cabling, inverter reserve |
 | Peak sun hours | Per-city table | BoM (AU) / NREL (US) / NASA POWER (other) |
 | Orientation × tilt derates | Per-orientation curves | Calibrated to Resinc published data |
 | Days per year | 365 | Standard |
@@ -347,7 +355,7 @@ If you find a scenario where the numbers disagree by more than 5%, that's worth 
 
 | Concept | File |
 |---|---|
-| Constants (8% inflation, 0.9% degradation, month weights) | `src/lib/constants.ts` |
+| Constants (8% inflation, 0.7% degradation, 1.5% system loss, month weights) | `src/lib/constants.ts` |
 | Derate lookups + interpolation + hemisphere flip | `src/lib/solar.ts` |
 | Postcode → city / hemisphere / sun-hours | `src/lib/location.ts` |
 | Daily/annual production + Year-1 savings | `src/hooks/useSystemCalc.ts` |

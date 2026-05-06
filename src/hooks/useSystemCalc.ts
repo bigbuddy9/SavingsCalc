@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { MONTH_LABELS, MONTH_WEIGHTS } from "@/lib/constants";
+import { MONTH_LABELS, MONTH_WEIGHTS, SYSTEM_LOSS_FACTOR } from "@/lib/constants";
 import {
   calculateSolarProduction,
   type Orientation,
@@ -64,8 +64,11 @@ export function useSystemCalc(args: {
     const safeSelfUse = Math.max(0, args.selfUseKwh);
     const excessExportDaily = Math.max(0, prod.dailyProductionKwh - safeSelfUse);
 
-    const gridOffsetSavings = safeSelfUse * 365 * args.peakRatePerKwh;
-    const exportEarnings = excessExportDaily * 365 * args.fitRatePerKwh;
+    // Real-world system loss factor (soiling, cabling, inverter reserve)
+    // — Resinc convention. See constants.ts.
+    const lossMultiplier = 1 - SYSTEM_LOSS_FACTOR;
+    const gridOffsetSavings = safeSelfUse * 365 * args.peakRatePerKwh * lossMultiplier;
+    const exportEarnings = excessExportDaily * 365 * args.fitRatePerKwh * lossMultiplier;
     const year1Savings = gridOffsetSavings + exportEarnings;
 
     const solarCoveragePct =
