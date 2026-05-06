@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { calculateLoanPayment } from "@/hooks/useCashflowCalc";
 import { calculateSolarProduction } from "@/lib/solar";
 import { lookupLocation } from "@/lib/location";
-import { PRICE_INCREASE, PANEL_DEGRADATION } from "@/lib/constants";
+import { PRICE_INCREASE, PANEL_DEGRADATION, SYSTEM_LOSS_FACTOR } from "@/lib/constants";
 
 /**
  * End-to-end Resinc parity harness.
@@ -31,7 +31,7 @@ const SCENARIO = {
   tiltByOrientation: { N: 26, NE: 30, E: 30, SE: 30, S: 30, SW: 30, W: 30, NW: 30 },
   panelWattage: 440,
   shadingDeratePct: 0,
-  selfUseDailyKwh: 7,
+  selfUseDailyKwh: 25,
   peakRatePerKwh: 0.45,
   fitRatePerKwh: 0.05,
   // Section 3 (investment)
@@ -74,8 +74,9 @@ describe(`Resinc parity harness — ${SCENARIO.label}`, () => {
   // === YEAR-1 SAVINGS ===
   const safeSelfUse = Math.max(0, SCENARIO.selfUseDailyKwh);
   const excessExportDaily = Math.max(0, prod.dailyProductionKwh - safeSelfUse);
-  const gridOffsetSavings = safeSelfUse * 365 * SCENARIO.peakRatePerKwh;
-  const exportEarnings = excessExportDaily * 365 * SCENARIO.fitRatePerKwh;
+  const lossMultiplier = 1 - SYSTEM_LOSS_FACTOR;
+  const gridOffsetSavings = safeSelfUse * 365 * SCENARIO.peakRatePerKwh * lossMultiplier;
+  const exportEarnings = excessExportDaily * 365 * SCENARIO.fitRatePerKwh * lossMultiplier;
   const year1Savings = gridOffsetSavings + exportEarnings;
 
   // === SECTION 1 — REAL COST PROJECTION ===
