@@ -20,23 +20,23 @@ import { PRICE_INCREASE, PANEL_DEGRADATION, SYSTEM_LOSS_FACTOR } from "@/lib/con
  */
 
 const SCENARIO = {
-  label: "Scenario 4 — Sydney 2000 / $2,500 bill / 22 × 440W all-N@30° / 10yr loan @ 6.49% (heavy export)",
-  annualBill: 2500,
+  label: "Scenario 5 — Sydney 2000 / $5,500 bill / 30 × 440W (3NE/10E/5SE/12W@30°) / 12yr loan @ 6.79%",
+  annualBill: 5500,
   taxRatePercent: 30,
   country: "AU" as const,
   postcode: "2000",
-  panelsByOrientation: { N: 22, NE: 0, E: 0, SE: 0, S: 0, SW: 0, W: 0, NW: 0 },
+  panelsByOrientation: { N: 0, NE: 3, E: 10, SE: 5, S: 0, SW: 0, W: 12, NW: 0 },
   tiltByOrientation: { N: 30, NE: 30, E: 30, SE: 30, S: 30, SW: 30, W: 30, NW: 30 },
   panelWattage: 440,
   shadingDeratePct: 0,
-  selfUseDailyKwh: 6,
-  peakRatePerKwh: 0.40,
-  fitRatePerKwh: 0.08,
-  investment: 12000,
-  loanTermYears: 10,
-  interestRatePercent: 6.49,
+  selfUseDailyKwh: 28,
+  peakRatePerKwh: 0.42,
+  fitRatePerKwh: 0.06,
+  investment: 24000,
+  loanTermYears: 12,
+  interestRatePercent: 6.79,
   deposit: 0,
-  setupFee: 395,
+  setupFee: 495,
   monthlyFee: 10,
 };
 
