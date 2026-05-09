@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Brand-overridable design tokens. The BrandProvider rewrites these at
+ * runtime per tenant; defaults below match the original amber accent. */
+:root {
+  --color-accent: 245 158 11;
+}
+
 @layer base {
   html {
     -webkit-font-smoothing: antialiased;

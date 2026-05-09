@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useCalculator } from "@/state/CalculatorContext";
+import { useBrand } from "@/state/BrandProvider";
 
 /**
  * Top-of-page toolbar: customer name (used as the document title and PDF
@@ -11,15 +12,16 @@ import { useCalculator } from "@/state/CalculatorContext";
  */
 export function TopToolbar() {
   const { inputs, setInput } = useCalculator();
+  const brand = useBrand();
   const customerName = inputs.customerName;
 
   // Keep document.title in sync — Save-as-PDF uses it as the default filename.
   useEffect(() => {
     const trimmed = customerName.trim();
     document.title = trimmed
-      ? `${trimmed} — Solar Savings Analysis`
-      : "Solar Savings Analysis";
-  }, [customerName]);
+      ? `${trimmed} — ${brand.productName}`
+      : brand.productName;
+  }, [customerName, brand.productName]);
 
   function handleCopyLink() {
     const url = window.location.href;
@@ -35,6 +37,15 @@ export function TopToolbar() {
 
   return (
     <>
+      {brand.logoSrc && (
+        <div className="container-narrow mb-5 print:hidden">
+          <img
+            src={brand.logoSrc}
+            alt={`${brand.name} logo`}
+            className="h-12 md:h-14 w-auto object-contain"
+          />
+        </div>
+      )}
       <div className="container-narrow mb-8 print:hidden">
         <div className="rounded-2xl border border-line bg-surface p-4 md:p-5 shadow-card flex flex-col md:flex-row md:items-center gap-3 md:gap-5">
           <div className="flex-1 min-w-0">
@@ -75,11 +86,18 @@ export function TopToolbar() {
       {/* Print-only header. Hidden on screen. */}
       <div className="hidden print:block container-narrow mb-6">
         <div className="border-b border-ink/30 pb-4">
+          {brand.logoSrc && (
+            <img
+              src={brand.logoSrc}
+              alt={`${brand.name} logo`}
+              className="mb-3 h-10 w-auto object-contain"
+            />
+          )}
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
-            Solar Savings Analysis
+            {brand.productName}
           </p>
           <h1 className="mt-1 text-3xl font-bold tracking-tight text-ink">
-            {customerName.trim() || "Solar Savings Analysis"}
+            {customerName.trim() || brand.productName}
           </h1>
           <p className="mt-1 text-[12px] text-ink-muted">
             Generated {new Date().toLocaleDateString(undefined, {

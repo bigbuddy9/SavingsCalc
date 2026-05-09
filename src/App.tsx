@@ -6,9 +6,10 @@ import { Section2System } from "@/components/sections/Section2System";
 import { Section3Investment } from "@/components/sections/Section3Investment";
 import { Section4Savings } from "@/components/sections/Section4Savings";
 import { FinalComparison } from "@/components/sections/FinalComparison";
-import { theme } from "@/config/theme";
+import { useBrand } from "@/state/BrandProvider";
 
 export default function App() {
+  const brand = useBrand();
   return (
     <CalculatorProvider>
       <main className="pt-8 md:pt-10 pb-24 md:pb-32 print:pt-0 print:pb-0">
@@ -27,7 +28,7 @@ export default function App() {
       <footer className="border-t border-line/80 py-10 bg-surface print:hidden">
         <div className="container-narrow text-[13px] text-ink-subtle">
           <p>
-            © {new Date().getFullYear()} {theme.brand.name}. All values are estimates for illustration.
+            © {new Date().getFullYear()} {brand.name}. All values are estimates for illustration.
           </p>
         </div>
       </footer>

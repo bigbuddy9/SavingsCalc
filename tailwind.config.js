@@ -53,7 +53,7 @@ export default {
           ring: "#FACC15",
         },
         accent: {
-          DEFAULT: "#F59E0B",
+          DEFAULT: "rgb(var(--color-accent) / <alpha-value>)",
         },
       },
       letterSpacing: {
