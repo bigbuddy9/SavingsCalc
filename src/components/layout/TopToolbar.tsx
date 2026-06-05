@@ -1,17 +1,15 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useCalculator } from "@/state/CalculatorContext";
+import { QuotesPanel } from "./QuotesPanel";
 
 /**
- * Top-of-page toolbar: customer name (used as the document title and PDF
- * filename), plus a Print / Save-as-PDF button and a Copy-Link button so the
- * configuration can be shared.
- *
- * Hidden in the print stylesheet — only the rendered customer name and a
- * timestamp survive in the printed PDF.
+ * Top-of-page toolbar: customer name, quotes library, print, and copy-link.
+ * Hidden in the print stylesheet — only the customer name and timestamp survive in PDF.
  */
 export function TopToolbar() {
-  const { inputs, setInput } = useCalculator();
+  const { inputs, setInput, quotes, newQuote } = useCalculator();
   const customerName = inputs.customerName;
+  const [panelOpen, setPanelOpen] = useState(false);
 
   // Keep document.title in sync — Save-as-PDF uses it as the default filename.
   useEffect(() => {
@@ -36,7 +34,9 @@ export function TopToolbar() {
   return (
     <>
       <div className="container-narrow mb-8 print:hidden">
-        <div className="rounded-2xl border border-line bg-surface p-4 md:p-5 shadow-card flex flex-col md:flex-row md:items-center gap-3 md:gap-5">
+        <div className="rounded-2xl border border-line bg-surface p-4 md:p-5 shadow-card flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
+
+          {/* Customer name */}
           <div className="flex-1 min-w-0">
             <label className="block">
               <span className="block text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-subtle mb-1.5">
@@ -51,7 +51,35 @@ export function TopToolbar() {
               />
             </label>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+
+          {/* Actions */}
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            {/* Saved quotes */}
+            <button
+              type="button"
+              onClick={() => setPanelOpen(true)}
+              className="relative inline-flex items-center gap-2 rounded-lg border border-line bg-surface hover:bg-surface-alt px-3.5 py-2.5 text-[13px] font-semibold text-ink-soft transition-colors"
+            >
+              <FolderIcon />
+              Saved quotes
+              {quotes.length > 0 && (
+                <span className="inline-flex items-center justify-center rounded-full bg-ink text-white text-[10px] font-bold w-4 h-4 leading-none">
+                  {quotes.length > 99 ? "99+" : quotes.length}
+                </span>
+              )}
+            </button>
+
+            {/* New quote */}
+            <button
+              type="button"
+              onClick={newQuote}
+              className="inline-flex items-center gap-2 rounded-lg border border-line bg-surface hover:bg-surface-alt px-3.5 py-2.5 text-[13px] font-semibold text-ink-soft transition-colors"
+            >
+              <PlusIcon />
+              New quote
+            </button>
+
+            {/* Copy link */}
             <button
               type="button"
               onClick={handleCopyLink}
@@ -60,6 +88,8 @@ export function TopToolbar() {
               <LinkIcon />
               Copy link
             </button>
+
+            {/* Print */}
             <button
               type="button"
               onClick={() => window.print()}
@@ -72,7 +102,7 @@ export function TopToolbar() {
         </div>
       </div>
 
-      {/* Print-only header. Hidden on screen. */}
+      {/* Print-only header */}
       <div className="hidden print:block container-narrow mb-6">
         <div className="border-b border-ink/30 pb-4">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted">
@@ -90,13 +120,13 @@ export function TopToolbar() {
           </p>
         </div>
       </div>
+
+      <QuotesPanel open={panelOpen} onClose={() => setPanelOpen(false)} />
     </>
   );
 }
 
 function flash(msg: string) {
-  // Lightweight ephemeral toast — built in DOM to keep this component
-  // dependency-free (no toaster lib needed for one-shot copy feedback).
   const el = document.createElement("div");
   el.textContent = msg;
   el.className =
@@ -107,6 +137,27 @@ function flash(msg: string) {
     el.style.opacity = "0";
     setTimeout(() => el.remove(), 300);
   }, 1800);
+}
+
+function FolderIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
+      <path
+        d="M1.5 3.5A1 1 0 0 1 2.5 2.5H5l1.5 1.5H11.5a1 1 0 0 1 1 1V11a1 1 0 0 1-1 1H2.5a1 1 0 0 1-1-1V3.5z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function PlusIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
+      <path d="M7 2v10M2 7h10" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+    </svg>
+  );
 }
 
 function LinkIcon() {

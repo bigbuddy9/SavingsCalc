@@ -1,4 +1,13 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useRealCostCalc, type RealCostResult } from "@/hooks/useRealCostCalc";
 import { useSystemCalc, type SystemResult } from "@/hooks/useSystemCalc";
 import {
@@ -15,8 +24,31 @@ import {
   currencySymbol as fmtCurrencySymbol,
 } from "@/lib/format";
 import { readInputsFromUrl, writeInputsToUrl } from "./urlSync";
+import {
+  ORIENTATIONS,
+  type Orientation,
+  type OrientationPanelCount,
+  type OrientationTilt,
+} from "@/lib/solar";
+import {
+  FALLBACK_HEMISPHERE,
+  FALLBACK_PEAK_SUN_HOURS,
+  lookupLocation,
+  type Country,
+  type LocationResult,
+} from "@/lib/location";
+import {
+  loadQuotes,
+  upsertQuote,
+  removeQuote,
+  generateQuoteId,
+  type SavedQuote,
+} from "./quotesStore";
+
+// ─── Session state (current working session) ────────────────────────────────
 
 const LS_KEY = "savingscalc_state";
+const LS_ACTIVE_ID = "savingscalc_active_id";
 
 function loadFromLocalStorage(): Partial<CalculatorInputs> | null {
   try {
@@ -32,49 +64,48 @@ function loadFromLocalStorage(): Partial<CalculatorInputs> | null {
 function saveToLocalStorage(inputs: CalculatorInputs): void {
   try {
     localStorage.setItem(LS_KEY, JSON.stringify(inputs));
+  } catch {}
+}
+
+function loadActiveId(): string | null {
+  try {
+    return localStorage.getItem(LS_ACTIVE_ID);
   } catch {
-    // Storage quota exceeded or private browsing — fail silently.
+    return null;
   }
 }
-import {
-  ORIENTATIONS,
-  type Orientation,
-  type OrientationPanelCount,
-  type OrientationTilt,
-} from "@/lib/solar";
-import {
-  FALLBACK_HEMISPHERE,
-  FALLBACK_PEAK_SUN_HOURS,
-  lookupLocation,
-  type Country,
-  type LocationResult,
-} from "@/lib/location";
+
+function saveActiveId(id: string | null): void {
+  try {
+    if (id) {
+      localStorage.setItem(LS_ACTIVE_ID, id);
+    } else {
+      localStorage.removeItem(LS_ACTIVE_ID);
+    }
+  } catch {}
+}
+
+// ─── Types ──────────────────────────────────────────────────────────────────
 
 export type CalculatorInputs = {
-  // Top-level
   customerName: string;
 
-  // Section 1
   annualBill: number;
   taxRate: number;
 
-  // Location (drives hemisphere + peak sun hours)
   country: Country;
   postcode: string;
 
-  // Section 2 — system
   panelWatt: number;
   panelsByOrientation: OrientationPanelCount;
   tiltByOrientation: OrientationTilt;
-  shadingDeratePct: number;       // 0..1 (e.g. 0.05 = 5%)
+  shadingDeratePct: number;
 
-  // Section 2 — usage and rates
-  dailyUsage: number;             // kWh/day
-  selfUseKwh: number;             // kWh/day of solar consumed (incl. via battery)
-  peakRate: number;               // $/kWh
-  fitRate: number;                // $/kWh
+  dailyUsage: number;
+  selfUseKwh: number;
+  peakRate: number;
+  fitRate: number;
 
-  // Section 3 — pricing (line items are user-editable: add / rename / remove)
   priceLineItems: PriceLineItem[];
   solarStcs: number;
   solarStcPrice: number;
@@ -82,7 +113,6 @@ export type CalculatorInputs = {
   batteryStcPrice: number;
   discount: number;
 
-  // Section 4
   loanTerm: number;
   interestRate: number;
   deposit: number;
@@ -100,7 +130,7 @@ const DEFAULT_TILTS: OrientationTilt = ORIENTATIONS.reduce((acc, o) => {
   return acc;
 }, {} as OrientationTilt);
 
-const DEFAULTS: CalculatorInputs = {
+export const DEFAULTS: CalculatorInputs = {
   customerName: "",
   annualBill: 0,
   taxRate: 30,
@@ -149,19 +179,24 @@ export type CalculatorContextValue = {
   addPriceLineItem: () => void;
   removePriceLineItem: (id: string) => void;
   updatePriceLineItem: (id: string, patch: Partial<Omit<PriceLineItem, "id">>) => void;
-  /** Resolved location (city/state/hemisphere/peak-sun) derived from country + postcode. */
   location: LocationResult;
   realCost: RealCostResult;
   system: SystemResult;
   pricing: PricingResult;
   cashflow: CashflowResult;
-  /** Currency-aware formatters bound to location.currency. */
   formatMoney: (n: number, opts?: { withSign?: boolean }) => string;
   formatMoneyK: (n: number) => string;
   formatMoneyKUnsigned: (n: number) => string;
-  /** Just the currency symbol (e.g. "£"). For input prefixes. */
   currencySymbol: string;
+  // ── Quotes library ──
+  quotes: SavedQuote[];
+  activeQuoteId: string | null;
+  loadQuote: (quote: SavedQuote) => void;
+  newQuote: () => void;
+  deleteQuote: (id: string) => void;
 };
+
+// ─── Provider ───────────────────────────────────────────────────────────────
 
 const Ctx = createContext<CalculatorContextValue | null>(null);
 
@@ -175,11 +210,74 @@ export function CalculatorProvider({ children }: { children: ReactNode }) {
     return DEFAULTS;
   });
 
-  // Persist to localStorage and URL hash on every change.
+  const [activeQuoteId, setActiveQuoteId] = useState<string | null>(() => loadActiveId());
+  const [quotes, setQuotes] = useState<SavedQuote[]>(() => loadQuotes());
+
+  // Refresh the in-memory quotes list from localStorage.
+  const refreshQuotes = useCallback(() => setQuotes(loadQuotes()), []);
+
+  // Persist session state on every change.
   useEffect(() => {
     writeInputsToUrl(inputs);
     saveToLocalStorage(inputs);
   }, [inputs]);
+
+  // Persist active quote ID.
+  useEffect(() => {
+    saveActiveId(activeQuoteId);
+  }, [activeQuoteId]);
+
+  // Auto-save to the quotes library (debounced 1.5 s) whenever customer name is set.
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeQuoteIdRef = useRef(activeQuoteId);
+  activeQuoteIdRef.current = activeQuoteId;
+
+  useEffect(() => {
+    if (!inputs.customerName.trim()) return;
+
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => {
+      const currentId = activeQuoteIdRef.current;
+      const id = currentId ?? generateQuoteId();
+
+      const quote: SavedQuote = {
+        id,
+        customerName: inputs.customerName.trim(),
+        savedAt: new Date().toISOString(),
+        inputs,
+      };
+
+      upsertQuote(quote);
+      if (!currentId) setActiveQuoteId(id);
+      refreshQuotes();
+    }, 1500);
+
+    return () => {
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    };
+  }, [inputs, refreshQuotes]);
+
+  // ── Quotes actions ──────────────────────────────────────────────────────
+
+  const loadQuote = useCallback((quote: SavedQuote) => {
+    setInputs({ ...DEFAULTS, ...quote.inputs });
+    setActiveQuoteId(quote.id);
+  }, []);
+
+  const newQuote = useCallback(() => {
+    setInputs(DEFAULTS);
+    setActiveQuoteId(null);
+  }, []);
+
+  const deleteQuote = useCallback((id: string) => {
+    removeQuote(id);
+    refreshQuotes();
+    if (activeQuoteIdRef.current === id) {
+      setActiveQuoteId(null);
+    }
+  }, [refreshQuotes]);
+
+  // ── Input setters ───────────────────────────────────────────────────────
 
   const setInput = <K extends keyof CalculatorInputs>(key: K, value: CalculatorInputs[K]) => {
     setInputs((prev) => ({ ...prev, [key]: value }));
@@ -199,7 +297,6 @@ export function CalculatorProvider({ children }: { children: ReactNode }) {
     }));
   };
 
-  /** Switching country resets the postcode so we don't keep an invalid one around. */
   const setCountry = (country: Country) => {
     setInputs((prev) =>
       prev.country === country ? prev : { ...prev, country, postcode: "" }
@@ -223,10 +320,7 @@ export function CalculatorProvider({ children }: { children: ReactNode }) {
     }));
   };
 
-  const updatePriceLineItem = (
-    id: string,
-    patch: Partial<Omit<PriceLineItem, "id">>
-  ) => {
+  const updatePriceLineItem = (id: string, patch: Partial<Omit<PriceLineItem, "id">>) => {
     setInputs((prev) => ({
       ...prev,
       priceLineItems: prev.priceLineItems.map((i) =>
@@ -234,6 +328,8 @@ export function CalculatorProvider({ children }: { children: ReactNode }) {
       ),
     }));
   };
+
+  // ── Derived values ──────────────────────────────────────────────────────
 
   const location = useMemo<LocationResult>(
     () =>
@@ -298,7 +394,6 @@ export function CalculatorProvider({ children }: { children: ReactNode }) {
 
   const pricing = usePricingCalc(pricingInputs);
 
-  // Year-1 savings now derived in Section 2 from the system + rates inputs.
   const cashflow = useCashflowCalc(
     pricing.investment,
     system.year1SelfUseSavings,
@@ -329,8 +424,14 @@ export function CalculatorProvider({ children }: { children: ReactNode }) {
       formatMoneyK,
       formatMoneyKUnsigned,
       currencySymbol,
+      quotes,
+      activeQuoteId,
+      loadQuote,
+      newQuote,
+      deleteQuote,
     }),
-    [inputs, location, realCost, system, pricing, cashflow, formatMoney, formatMoneyK, formatMoneyKUnsigned, currencySymbol]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [inputs, location, realCost, system, pricing, cashflow, formatMoney, formatMoneyK, formatMoneyKUnsigned, currencySymbol, quotes, activeQuoteId, loadQuote, newQuote, deleteQuote]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
