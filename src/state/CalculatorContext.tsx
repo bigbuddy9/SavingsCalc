@@ -15,6 +15,27 @@ import {
   currencySymbol as fmtCurrencySymbol,
 } from "@/lib/format";
 import { readInputsFromUrl, writeInputsToUrl } from "./urlSync";
+
+const LS_KEY = "savingscalc_state";
+
+function loadFromLocalStorage(): Partial<CalculatorInputs> | null {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveToLocalStorage(inputs: CalculatorInputs): void {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(inputs));
+  } catch {
+    // Storage quota exceeded or private browsing — fail silently.
+  }
+}
 import {
   ORIENTATIONS,
   type Orientation,
@@ -88,30 +109,29 @@ const DEFAULTS: CalculatorInputs = {
   postcode: "",
 
   panelWatt: 440,
-  // Default split mirrors the prototype: 23 panels, 11E + 12W
-  panelsByOrientation: { ...ZERO_PANELS, E: 11, W: 12 },
+  panelsByOrientation: { ...ZERO_PANELS },
   tiltByOrientation: { ...DEFAULT_TILTS },
   shadingDeratePct: 0,
 
-  dailyUsage: 55,
-  selfUseKwh: 47,
-  peakRate: 0.37,
-  fitRate: 0.05,
+  dailyUsage: 0,
+  selfUseKwh: 0,
+  peakRate: 0,
+  fitRate: 0,
 
   priceLineItems: [
-    { id: "system",         label: "System cost (panels + install)", amount: 62332 },
-    { id: "inverter",       label: "Inverter",                       amount: 6000  },
-    { id: "metering",       label: "Metering",                       amount: 850   },
-    { id: "siteInspection", label: "Site inspection",                amount: 198   },
-    { id: "splitArray",     label: "Split array",                    amount: 360   },
-    { id: "roofHeight",     label: "Roof height",                    amount: 276   },
-    { id: "other",          label: "Other",                          amount: 0     },
+    { id: "system",         label: "System cost (panels + install)", amount: 0 },
+    { id: "inverter",       label: "Inverter",                       amount: 0 },
+    { id: "metering",       label: "Metering",                       amount: 0 },
+    { id: "siteInspection", label: "Site inspection",                amount: 0 },
+    { id: "splitArray",     label: "Split array",                    amount: 0 },
+    { id: "roofHeight",     label: "Roof height",                    amount: 0 },
+    { id: "other",          label: "Other",                          amount: 0 },
   ],
-  solarStcs: 83,
+  solarStcs: 0,
   solarStcPrice: 39,
-  batteryStcs: 372,
+  batteryStcs: 0,
   batteryStcPrice: 39,
-  discount: 7492,
+  discount: 0,
 
   loanTerm: 10,
   interestRate: 6.29,
@@ -146,18 +166,19 @@ export type CalculatorContextValue = {
 const Ctx = createContext<CalculatorContextValue | null>(null);
 
 export function CalculatorProvider({ children }: { children: ReactNode }) {
-  // Restore from #hash on first paint — gives the sales rep a shareable link.
-  // Defaults fill any missing fields so older links keep working as the input
-  // shape evolves.
+  // Load priority: URL hash (shared link) → localStorage (returning user) → clean defaults.
   const [inputs, setInputs] = useState<CalculatorInputs>(() => {
     const fromUrl = readInputsFromUrl();
-    return fromUrl ? { ...DEFAULTS, ...fromUrl } : DEFAULTS;
+    if (fromUrl) return { ...DEFAULTS, ...fromUrl };
+    const fromStorage = loadFromLocalStorage();
+    if (fromStorage) return { ...DEFAULTS, ...fromStorage };
+    return DEFAULTS;
   });
 
-  // Mirror inputs back into the hash on every change — replaceState avoids
-  // adding history entries.
+  // Persist to localStorage and URL hash on every change.
   useEffect(() => {
     writeInputsToUrl(inputs);
+    saveToLocalStorage(inputs);
   }, [inputs]);
 
   const setInput = <K extends keyof CalculatorInputs>(key: K, value: CalculatorInputs[K]) => {
